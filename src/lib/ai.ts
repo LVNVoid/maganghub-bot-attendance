@@ -201,18 +201,14 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
 export async function generateReportFromActivity(
   activitySummary: string
 ): Promise<GeneratedReport> {
-  const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY;
-  const isGroq = !process.env.OPENAI_API_KEY && !!process.env.GROQ_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     return generateFallbackReport(activitySummary);
   }
 
-  const endpoint = isGroq
-    ? "https://api.groq.com/openai/v1/chat/completions"
-    : "https://api.openai.com/v1/chat/completions";
-
-  const model = isGroq ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+  const endpoint = "https://api.openai.com/v1/chat/completions";
+  const model = "gpt-4o-mini";
 
   const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI.
 Tugas Anda adalah mengubah ringkasan commit/aktivitas teknis pengguna menjadi laporan harian resmi, terstruktur, kontekstual, dan mudah dipahami oleh pembimbing maupun manajemen.
