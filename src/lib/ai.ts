@@ -21,29 +21,175 @@ export function ensureMinLength(text: string, fallbackAddition: string): string 
   return cleaned;
 }
 
+function translateCommit(rawMsg: string): {
+  text: string;
+  category: "feat" | "fix" | "refactor" | "docs" | "config" | "general";
+} {
+  let msg = rawMsg.trim().replace(/\s*\([a-f0-9]{7,}\)/gi, "").trim();
+
+  // Parse conventional commit format
+  const match = msg.match(/^([a-z]+)(?:\(([^)]+)\))?\s*:\s*(.+)$/i);
+  let type = "";
+  let scope = "";
+  let desc = msg;
+
+  if (match) {
+    type = match[1].toLowerCase();
+    scope = match[2] ? match[2].trim() : "";
+    desc = match[3].trim();
+  }
+
+  let category: "feat" | "fix" | "refactor" | "docs" | "config" | "general" = "general";
+  let actionText = "";
+
+  if (type === "fix" || type === "bugfix") {
+    category = "fix";
+    actionText = scope
+      ? `Melakukan perbaikan dan penyesuaian kendala pada modul ${scope}`
+      : "Melakukan perbaikan kendala teknis pada sistem";
+  } else if (type === "feat" || type === "feature") {
+    category = "feat";
+    actionText = scope
+      ? `Mengembangkan dan menambahkan fungsionalitas baru pada modul ${scope}`
+      : "Mengembangkan fungsionalitas baru pada sistem";
+  } else if (type === "refactor") {
+    category = "refactor";
+    actionText = scope
+      ? `Melakukan restrukturisasi dan optimasi kode pada komponen ${scope}`
+      : "Melakukan restrukturisasi dan perapian arsitektur kode aplikasi";
+  } else if (type === "docs") {
+    category = "docs";
+    actionText = scope
+      ? `Menyusun dan memperbarui dokumentasi teknis terkait ${scope}`
+      : "Menyusun dan memperbarui dokumentasi teknis proyek";
+  } else if (type === "chore" || type === "build" || type === "ci" || type === "config") {
+    category = "config";
+    actionText = scope
+      ? `Melakukan konfigurasi lingkungan dan build sistem pada ${scope}`
+      : "Melakukan konfigurasi lingkungan dan pemeliharaan dependensi sistem";
+  } else {
+    actionText = scope
+      ? `Melakukan penyesuaian teknis pada bagian ${scope}`
+      : "Melakukan penyesuaian teknis pada alur kerja aplikasi";
+  }
+
+  let translatedDesc = desc
+    .replace(/\bupdate live demo url for\b/gi, "pembaruan tautan demo langsung untuk")
+    .replace(/\bupdate\b/gi, "pembaruan")
+    .replace(/\badd\b/gi, "penambahan")
+    .replace(/\bcreate\b/gi, "pembuatan")
+    .replace(/\bfix\b/gi, "perbaikan")
+    .replace(/\bremove\b/gi, "penghapusan")
+    .replace(/\bdelete\b/gi, "penghapusan")
+    .replace(/\bchange\b/gi, "pengubahan")
+    .replace(/\bimplement\b/gi, "implementasi")
+    .replace(/\bsupport\b/gi, "dukungan")
+    .replace(/\bto match\b/gi, "agar sesuai dengan")
+    .replace(/\bfor\b/gi, "pada")
+    .replace(/\bto\b/gi, "ke")
+    .replace(/\band\b/gi, "serta")
+    .replace(/\bwith\b/gi, "dengan");
+
+  translatedDesc = translatedDesc.charAt(0).toLowerCase() + translatedDesc.slice(1);
+
+  return {
+    text: `${actionText}, yaitu ${translatedDesc}.`,
+    category,
+  };
+}
+
 export function generateFallbackReport(activitySummary: string): GeneratedReport {
-  // Extract clean lines from activitySummary
-  const lines = activitySummary
+  // Extract individual commit lines
+  const rawLines = activitySummary
     .split("\n")
-    .map((l) => l.trim().replace(/^-\s*(\[[^\]]+\]:\s*)?/, "").replace(/\s*\([a-f0-9]{7,}\)/gi, ""))
+    .map((l) => l.trim().replace(/^-\s*(\[[^\]]+\]:\s*)?/, ""))
     .filter(Boolean);
 
-  const cleanDescription = lines.join("; ") || "Melakukan penyesuaian kode, perbaikan bug, dan pengujian fungsionalitas fitur aplikasi.";
+  const parsedCommits = rawLines.map(translateCommit);
+  const primaryCategory = parsedCommits[0]?.category || "general";
 
-  const activity_log = ensureMinLength(
-    `Melaksanakan pengerjaan tugas pengembangan perangkat lunak sesuai target sprint, dengan fokus aktivitas: ${cleanDescription}.`,
-    "Seluruh implementasi telah diuji secara menyeluruh untuk memastikan stabilitas dan kesiapan fungsionalitas sistem berjalan dengan optimal."
-  );
+  // Build activity log directly from parsed commits
+  let activity_log = "";
+  if (parsedCommits.length > 0) {
+    const descriptions = parsedCommits.map((c) => c.text).join(" Selain itu, ");
+    activity_log = ensureMinLength(
+      descriptions,
+      "Seluruh tahapan implementasi telah diuji dan diverifikasi secara lokal untuk memastikan stabilitas serta kesiapan fungsionalitas sistem berjalan lancar."
+    );
+  } else {
+    activity_log = ensureMinLength(
+      "Melakukan penyesuaian logika sistem, refactoring komponen kode, dan pengujian berkala pada antarmuka aplikasi secara lokal.",
+      "Aktivitas ini dilakukan untuk memastikan seluruh alur interaksi pengguna berjalan dengan stabil tanpa hambatan teknis."
+    );
+  }
 
-  const lesson_learned = ensureMinLength(
-    `Memperoleh pemahaman mendalam terkait implementasi dan pemeliharaan komponen perangkat lunak, pentingnya validasi alur data secara konsisten, serta penguatan teknik debugging yang efektif dalam siklus pengembangan aplikasi modern.`,
-    "Pembelajaran ini memperkuat kemampuan analisis teknis dan penerapan standar rekayasa perangkat lunak yang terstruktur pada skala produksi."
-  );
+  // Generate contextual learning based on primary category
+  let lesson_learned = "";
+  switch (primaryCategory) {
+    case "fix":
+      lesson_learned = ensureMinLength(
+        "Memahami pentingnya ketelitian dalam validasi tautan eksternal, penelusuran alur integrasi data, serta teknik verifikasi endpoint produksi agar layanan yang diakses pengguna tetap stabil dan akurat.",
+        "Pembelajaran ini memperkuat kemampuan analisis akar masalah dan pemecahan bug secara sistematis pada sistem operasional."
+      );
+      break;
+    case "feat":
+      lesson_learned = ensureMinLength(
+        "Mempelajari perancangan antarmuka responsif dan penyelarasan logika bisnis baru, penanganan validasi masukan data, serta alur pengujian fungsional sebelum fitur digabungkan ke cabang utama sistem.",
+        "Hal ini memperdalam wawasan tentang standar rekayasa perangkat lunak yang terukur dan ramah pengguna."
+      );
+      break;
+    case "refactor":
+      lesson_learned = ensureMinLength(
+        "Memperdalam prinsip Clean Code dan pemisahan tanggung jawab komponen modul, efisiensi pembacaan kode, serta teknik perapian struktur direktori agar aplikasi lebih mudah dikembangkan dan dirawat dalam jangka panjang.",
+        "Penerapan refactoring ini penting guna meminimalkan akumulasi technical debt pada basis kode aplikasi."
+      );
+      break;
+    case "config":
+      lesson_learned = ensureMinLength(
+        "Memahami standarisasi alur otomatisasi build sistem, pengelolaan dependensi aplikasi, serta pentingnya konfigurasi variabel lingkungan yang aman dan konsisten antar tahap pengembangan.",
+        "Pengetahuan ini menunjang kesiapan pipeline integrasi dan perilisan aplikasi secara berkelanjutan."
+      );
+      break;
+    default:
+      lesson_learned = ensureMinLength(
+        "Memperoleh pemahaman komprehensif mengenai siklus pemeliharaan kode sumber, pentingnya dokumentasi riwayat perubahan yang terstruktur, serta koordinasi teknis dalam memastikan kualitas perangkat lunak.",
+        "Pembelajaran ini meningkatkan kedisiplinan rekayasa perangkat lunak dalam alur kerja profesional."
+      );
+  }
 
-  const obstacles = ensureMinLength(
-    `Menghadapi penyesuaian konfigurasi dan sinkronisasi parameter teknis pada alur kerja aplikasi, yang berhasil diatasi melalui penelusuran log secara cermat serta pengujian berulang hingga seluruh fungsi berjalan sesuai spesifikasi.`,
-    "Tidak ada kendala kritis lain yang menghambat pelaksanaan tugas pengerjaan hari ini."
-  );
+  // Generate contextual obstacles based on primary category
+  let obstacles = "";
+  switch (primaryCategory) {
+    case "fix":
+      obstacles = ensureMinLength(
+        "Menemukan ketidaksesuaian alamat tautan atau respons server saat pengujian awal, yang berhasil diselesaikan dengan memeriksa konfigurasi domain serta memperbarui URL tujuan secara tepat.",
+        "Tidak ada kendala kritis lain yang menghambat penyelesaian tugas pemeliharaan sistem hari ini."
+      );
+      break;
+    case "feat":
+      obstacles = ensureMinLength(
+        "Menghadapi tantangan dalam menyelaraskan format data antar komponen antarmuka, yang berhasil diatasi melalui penyesuaian tipe data dan pengujian alur interaksi secara menyeluruh.",
+        "Seluruh fungsionalitas baru kini telah terintegrasi dengan baik dan siap digunakan."
+      );
+      break;
+    case "refactor":
+      obstacles = ensureMinLength(
+        "Perlu memastikan proses refactoring tidak mengubah alur kerja fungsi yang sudah berjalan sebelumnya, yang diselesaikan dengan melakukan pengetesan regresi secara bertahap pada setiap modul terkait.",
+        "Seluruh pengujian menunjukkan hasil yang konsisten tanpa menimbulkan efek samping pada fungsi lain."
+      );
+      break;
+    case "config":
+      obstacles = ensureMinLength(
+        "Menyesuaikan perbedaan konfigurasi antara lingkungan pengembangan lokal dan server tujuan, yang diatasi dengan standarisasi parameter konfigurasi dan analisis log secara teliti.",
+        "Kendala konfigurasi telah teratasi sepenuhnya dan build sistem berjalan tanpa hambatan."
+      );
+      break;
+    default:
+      obstacles = ensureMinLength(
+        "Menghadapi penyesuaian minor pada sinkronisasi alur kerja antarmuka dan data, yang berhasil diatasi secara mandiri melalui pengecekan ulang kode dan pengujian berkala.",
+        "Pengerjaan tugas harian dapat diselesaikan sesuai target yang telah direncanakan."
+      );
+  }
 
   return {
     activity_log,
@@ -68,14 +214,19 @@ export async function generateReportFromActivity(
 
   const model = isGroq ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
 
-  const systemPrompt = `Anda adalah asisten cerdas untuk peserta magang Kemnaker.
-Tugas Anda adalah membuat laporan harian magang berdasarkan ringkasan aktivitas/commit pengerjaan software.
-Format laporan WAJIB terdiri dari 3 bagian:
-1. activity_log: Uraian aktivitas pengerjaan harian yang berfokus pada hasil dan fungsi nyata dalam bahasa Indonesia semi-formal tanpa jargon kode/nama fungsi mentah (MINIMAL 100 KARAKTER).
-2. lesson_learned: Pembelajaran teknis dan profesional yang diperoleh (MINIMAL 100 KARAKTER).
-3. obstacles: Kendala teknis atau tantangan yang dihadapi serta solusinya (MINIMAL 100 KARAKTER).
+  const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI.
+Tugas Anda adalah mengubah ringkasan commit/aktivitas teknis pengguna menjadi laporan harian resmi, terstruktur, kontekstual, dan mudah dipahami oleh pembimbing maupun manajemen.
 
-Kembalikan respon HANYA dalam format JSON:
+ATURAN UTAMA:
+1. Format Wajib 3 Bagian (JSON):
+   - activity_log: Uraian aktivitas pengerjaan nyata yang dikerjakan hari ini berdasarkan commit yang ada. Tulis secara aktif, deskriptif, dan jelaskan tujuannya tanpa mencantumkan teks pembuka klise/generik. Minimal 100 karakter.
+   - lesson_learned: Pembelajaran teknis atau profesional yang diperoleh dari pengerjaan aktivitas tersebut (pemahaman arsitektur, teknik penanganan error, validasi data, dll.). Minimal 100 karakter.
+   - obstacles: Tantangan logis yang dihadapi selama pengerjaan dan solusi konkret yang dilakukan untuk mengatasinya. Minimal 100 karakter.
+2. Gaya Bahasa:
+   - Bahasa Indonesia baku, formal, profesional.
+   - DILARANG menggunakan kalimat pembuka klise atau boilerplate berulang (seperti "Melaksanakan pengerjaan tugas pengembangan perangkat lunak sesuai target sprint, dengan fokus aktivitas:").
+   - Langsung jelaskan pekerjaan nyata yang dilakukan dan dampaknya bagi sistem.
+3. Output HANYA format JSON murni:
 {
   "activity_log": "...",
   "lesson_learned": "...",
