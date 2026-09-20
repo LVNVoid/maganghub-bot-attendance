@@ -142,39 +142,68 @@ export class MagangHubApiClient {
         authedSessionCookie = (loginSetCookie as string).split(";")[0];
       }
 
-      if (!redirectUri) {
-        // Jika belum ada redirect_uri, kirim POST /auth untuk authorize OAuth client
-        const authRes = await axios.post(
-          "https://account.kemnaker.go.id/auth",
-          {},
-          {
+      let callbackUrl = "";
+      if (redirectUri && redirectUri.includes("code=")) {
+        callbackUrl = redirectUri;
+      } else {
+        // Setelah login di account.kemnaker.go.id, request ssoUrl kembali dengan session cookie terautentikasi
+        try {
+          const ssoAuthRes = await axios.get(ssoUrl, {
             headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              "X-CSRF-TOKEN": csrfToken,
-              "X-Requested-With": "XMLHttpRequest",
+              Accept:
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
               Cookie: authedSessionCookie,
-              Referer: ssoUrl,
-              Origin: "https://account.kemnaker.go.id",
               "User-Agent":
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             },
+            maxRedirects: 0,
+            validateStatus: (status) => status >= 200 && status < 400,
             timeout: 10000,
-          }
-        );
+          });
 
-        redirectUri = authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri;
+          if (ssoAuthRes.status === 302 || ssoAuthRes.status === 301) {
+            callbackUrl = ssoAuthRes.headers.location || "";
+          } else if (
+            typeof ssoAuthRes.data === "string" &&
+            ssoAuthRes.data.includes("auth-authorize")
+          ) {
+            // Butuh persetujuan OAuth client, kirim POST /auth
+            const authRes = await axios.post(
+              "https://account.kemnaker.go.id/auth",
+              {},
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                  "X-CSRF-TOKEN": csrfToken,
+                  "X-Requested-With": "XMLHttpRequest",
+                  Cookie: authedSessionCookie,
+                  Referer: ssoUrl,
+                  Origin: "https://account.kemnaker.go.id",
+                  "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                },
+                timeout: 10000,
+              }
+            );
+            callbackUrl =
+              authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri || "";
+          }
+        } catch (err: any) {
+          if (err.response?.status === 302 && err.response?.headers?.location) {
+            callbackUrl = err.response.headers.location;
+          }
+        }
       }
 
-      if (!redirectUri) {
+      if (!callbackUrl || !callbackUrl.includes("code=")) {
         throw new Error(
-          loginRes.data?.message ||
-            "Login SSO Kemnaker berhasil namun redirect URI tidak ditemukan."
+          `SSO callback tidak valid: code atau state tidak ditemukan pada ${callbackUrl || redirectUri}`
         );
       }
 
       // Step 4: Callback ke Monev API untuk tukar auth code dengan access token
-      const redirectUrlObj = new URL(redirectUri);
+      const redirectUrlObj = new URL(callbackUrl);
       const code = redirectUrlObj.searchParams.get("code");
       const state = redirectUrlObj.searchParams.get("state");
 
