@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Copy, Check, RefreshCw, Terminal } from "lucide-react";
 import { regenerateWebhookKey } from "@/app/(dashboard)/settings/actions";
 
@@ -17,6 +19,7 @@ export function WebhookCurlBox({
   const [currentKey, setCurrentKey] = useState(webhookKey);
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Compute crontab time from autoSubmitTime (HH:MM)
   const [hour = "14", minute = "00"] = autoSubmitTime.split(":");
@@ -36,17 +39,19 @@ ${cronExpression} ${curlCommand} >> /var/log/maganghub.log 2>&1`;
   const handleCopy = () => {
     navigator.clipboard.writeText(curlCommand);
     setCopied(true);
+    toast.success("Perintah curl berhasil disalin!");
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleRegenerate = async () => {
-    if (!confirm("Regenerate webhook key? Cron job lama Anda akan berhenti berfungsi sampai Anda memperbarui key.")) {
-      return;
-    }
     setRegenerating(true);
     const res = await regenerateWebhookKey();
+    setShowConfirm(false);
     if (res?.webhookKey) {
       setCurrentKey(res.webhookKey);
+      toast.success("Webhook token berhasil diperbarui.");
+    } else {
+      toast.error("Gagal memperbarui webhook token.");
     }
     setRegenerating(false);
   };
@@ -61,7 +66,7 @@ ${cronExpression} ${curlCommand} >> /var/log/maganghub.log 2>&1`;
         <Button
           variant="outline"
           size="sm"
-          onClick={handleRegenerate}
+          onClick={() => setShowConfirm(true)}
           disabled={regenerating}
           className="h-7 text-[11px] gap-1.5"
         >
@@ -92,6 +97,18 @@ ${cronExpression} ${curlCommand} >> /var/log/maganghub.log 2>&1`;
           Pasang perintah ini di crontab VPS pribadi Anda (`crontab -e`) atau Cron Job Scheduler seperti Railway / Render.
         </p>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleRegenerate}
+        title="Regenerate Webhook Token"
+        description="Cron job lama yang menggunakan token saat ini akan berhenti berfungsi sampai Anda memperbarui token di scheduler Anda. Lanjutkan?"
+        confirmText="Ya, Regenerate"
+        cancelText="Batal"
+        variant="warning"
+        loading={regenerating}
+      />
     </div>
   );
 }

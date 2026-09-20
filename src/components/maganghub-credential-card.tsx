@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -41,39 +42,33 @@ export function MaganghubCredentialCard({
   const [testing, setTesting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
 
   const handleTestConnection = async () => {
     setTesting(true);
-    setTestResult(null);
 
     const res = await testMaganghubConnection();
     if ("error" in res && res.error) {
-      setTestResult({ success: false, message: res.error });
-    } else {
-      setTestResult(res as { success: boolean; message: string });
+      toast.error(res.error);
+    } else if ("message" in res) {
+      if (res.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
     }
     setTesting(false);
   };
 
   const handleDelete = async () => {
     setDeleting(true);
-    setError(null);
-    setTestResult(null);
 
     const res = await deleteMaganghubCredential();
     setShowDeleteConfirm(false);
     if (res?.error) {
-      setError(res.error);
+      toast.error(res.error);
     } else {
       setIsEditing(false);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Kredensial MagangHub berhasil dihapus.");
     }
     setDeleting(false);
   };
@@ -81,18 +76,15 @@ export function MaganghubCredentialCard({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(false);
 
     const formData = new FormData(e.currentTarget);
     const res = await saveMaganghubCredential(formData);
 
     if (res?.error) {
-      setError(res.error);
+      toast.error(res.error);
     } else {
-      setSuccess(true);
       setIsEditing(false);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Kredensial MagangHub berhasil disimpan.");
     }
     setLoading(false);
   };
@@ -138,36 +130,6 @@ export function MaganghubCredentialCard({
         </div>
         {getStatusBadge()}
       </div>
-
-      {success && (
-        <div className="p-3 bg-primary-soft border border-primary/20 rounded-sm text-xs text-primary flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
-          Operasi kredensial berhasil diproses.
-        </div>
-      )}
-
-      {error && (
-        <div className="p-3 bg-error/10 border border-error/20 rounded-sm text-xs text-error">
-          {error}
-        </div>
-      )}
-
-      {testResult && (
-        <div
-          className={`p-3 rounded-sm text-xs flex items-center gap-2 ${
-            testResult.success
-              ? "bg-primary-soft border border-primary/20 text-primary"
-              : "bg-error/10 border border-error/20 text-error"
-          }`}
-        >
-          {testResult.success ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 shrink-0" />
-          )}
-          <span>{testResult.message}</span>
-        </div>
-      )}
 
       {hasCredential && !isEditing ? (
         <div className="space-y-4">

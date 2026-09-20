@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { submitReportAction } from "@/app/(dashboard)/reports/actions";
 import { Send, CheckCircle2, AlertCircle, Loader2, CalendarOff } from "lucide-react";
@@ -19,32 +20,36 @@ export function QuickSubmitCard({
   isHoliday = false,
 }: QuickSubmitCardProps) {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (isHoliday) {
-      alert("Hari Minggu adalah hari libur magang. Pengiriman laporan harian dinonaktifkan.");
+      toast.error("Hari Minggu adalah hari libur magang. Pengiriman laporan harian dinonaktifkan.");
       return;
     }
 
     if (!hasCredential) {
-      alert("Harap konfigurasi email & password MagangHub Anda di menu Pengaturan terlebih dahulu.");
+      toast.error("Harap konfigurasi email & password MagangHub Anda di menu Pengaturan terlebih dahulu.");
       return;
     }
 
     setLoading(true);
-    setResult(null);
 
     const res = await submitReportAction();
     if ("error" in res && res.error) {
-      setResult({ success: false, message: res.error });
-    } else {
-      setResult(res as { success: boolean; message: string });
+      toast.error(res.error);
+    } else if ("message" in res) {
+      if (res.success) {
+        setSubmittedSuccess(true);
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
     }
     setLoading(false);
   };
 
-  const isSubmitted = todayStatus === "SUBMITTED" || result?.success;
+  const isSubmitted = todayStatus === "SUBMITTED" || submittedSuccess;
 
   return (
     <div className="bg-canvas-subtle border border-hairline rounded-md p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -78,18 +83,6 @@ export function QuickSubmitCard({
             ? "Kehadiran dan laporan harian Anda untuk hari ini sudah tercatat di Monev Kemnaker."
             : "Tekan tombol di samping untuk auto-generate dan submit laporan harian langsung ke portal Monev."}
         </p>
-
-        {result && (
-          <div
-            className={`mt-2 text-xs p-2.5 rounded-xs ${
-              result.success
-                ? "text-primary bg-primary-soft border border-primary/20"
-                : "text-error bg-error/10 border border-error/20"
-            }`}
-          >
-            {result.message}
-          </div>
-        )}
       </div>
 
       <Button

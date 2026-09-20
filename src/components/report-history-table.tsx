@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { deleteReportAction } from "@/app/(dashboard)/reports/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,10 +51,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
-  const [actionMessage, setActionMessage] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
 
   // Filter logic
   const filteredReports = reports.filter((r) => {
@@ -86,13 +83,12 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
     const target = reportToDelete;
 
     if (target.status === "SUBMITTED") {
-      alert("Laporan yang sudah berstatus SUBMITTED tidak dapat dihapus.");
+      toast.error("Laporan yang sudah berstatus SUBMITTED tidak dapat dihapus.");
       setReportToDelete(null);
       return;
     }
 
     setDeletingId(target.id);
-    setActionMessage(null);
 
     startTransition(async () => {
       const res = await deleteReportAction(target.id);
@@ -100,12 +96,9 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
       setReportToDelete(null);
 
       if (res.error) {
-        setActionMessage({ text: res.error, type: "error" });
+        toast.error(res.error);
       } else {
-        setActionMessage({
-          text: `Laporan tanggal ${target.date} berhasil dihapus.`,
-          type: "success",
-        });
+        toast.success(`Laporan tanggal ${target.date} berhasil dihapus.`);
         router.refresh();
       }
     });
@@ -141,23 +134,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
 
   return (
     <div className="space-y-4">
-      {actionMessage && (
-        <div
-          className={`p-3 rounded-xs text-xs flex items-center gap-2 ${
-            actionMessage.type === "success"
-              ? "bg-primary-soft border border-primary/20 text-primary"
-              : "bg-error/10 border border-error/20 text-error"
-          }`}
-        >
-          {actionMessage.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 shrink-0" />
-          )}
-          <span>{actionMessage.text}</span>
-        </div>
-      )}
-
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas-subtle border border-hairline rounded-md p-3.5">
         <div className="relative flex-1 max-w-md">

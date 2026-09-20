@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,22 +24,39 @@ interface GithubRepoCardProps {
 
 export function GithubRepoCard({ repos }: GithubRepoCardProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     const formData = new FormData(e.currentTarget);
     const res = await addGithubRepo(formData);
 
     if (res?.error) {
-      setError(res.error);
+      toast.error(res.error);
     } else {
+      toast.success("Repository berhasil ditambahkan.");
       (e.target as HTMLFormElement).reset();
     }
     setLoading(false);
+  };
+
+  const handleToggle = async (id: string, nextActive: boolean) => {
+    const res = await toggleTrackRepo(id, nextActive);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(nextActive ? "Repository diaktifkan." : "Tracking repository dijeda.");
+    }
+  };
+
+  const handleDelete = async (id: string, repoName: string) => {
+    const res = await deleteGithubRepo(id);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(`Repository ${repoName} dihapus.`);
+    }
   };
 
   return (
@@ -58,12 +76,6 @@ export function GithubRepoCard({ repos }: GithubRepoCardProps) {
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="p-3 bg-error/10 border border-error/20 rounded-sm text-xs text-error">
-          {error}
-        </div>
-      )}
 
       {/* Add Repo Form */}
       <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-3">
@@ -121,7 +133,7 @@ export function GithubRepoCard({ repos }: GithubRepoCardProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toggleTrackRepo(r.id, !r.isActive)}
+                  onClick={() => handleToggle(r.id, !r.isActive)}
                   className={`h-7 text-[11px] gap-1 ${
                     r.isActive ? "text-primary border-primary/30" : "text-ink-muted"
                   }`}
@@ -133,7 +145,7 @@ export function GithubRepoCard({ repos }: GithubRepoCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => deleteGithubRepo(r.id)}
+                  onClick={() => handleDelete(r.id, r.repoFullName)}
                   className="h-7 w-7 p-0 text-ink-muted hover:text-error"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

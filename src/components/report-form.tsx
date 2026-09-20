@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,6 @@ export function ReportForm({
   const [obstacles, setObstacles] = useState(initialReport?.obstacles || "");
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const handleDateSelect = (newDate: string) => {
     setDate(newDate);
@@ -43,16 +43,15 @@ export function ReportForm({
 
   const handleGenerateAI = async () => {
     setGenerating(true);
-    setMessage(null);
 
     const res = await generateReportDraft(date);
     if (res?.error) {
-      setMessage({ text: res.error, type: "error" });
+      toast.error(res.error);
     } else if (res?.report) {
       setActivity(res.report.activity);
       setLearning(res.report.learning);
       setObstacles(res.report.obstacles);
-      setMessage({ text: "Draft laporan berhasil di-generate!", type: "success" });
+      toast.success("Draft laporan berhasil di-generate!");
     }
     setGenerating(false);
   };
@@ -60,16 +59,15 @@ export function ReportForm({
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-    setMessage(null);
 
     const formData = new FormData(e.currentTarget);
     formData.set("date", date);
 
     const res = await saveReportDraft(formData);
     if (res?.error) {
-      setMessage({ text: res.error, type: "error" });
+      toast.error(res.error);
     } else {
-      setMessage({ text: "Draft berhasil disimpan.", type: "success" });
+      toast.success("Draft berhasil disimpan.");
     }
     setSaving(false);
   };
@@ -137,18 +135,6 @@ export function ReportForm({
           </Button>
         </div>
       </div>
-
-      {message && (
-        <div
-          className={`p-3 rounded-sm text-xs flex items-center gap-2 ${
-            message.type === "success"
-              ? "bg-primary-soft border border-primary/20 text-primary"
-              : "bg-error/10 border border-error/20 text-error"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
 
       {isSunday(date) && (
         <div className="p-3 rounded-xs text-xs flex items-center gap-2 bg-canvas-deep border border-hairline text-ink-secondary">

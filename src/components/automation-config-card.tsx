@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { WebhookCurlBox } from "@/components/webhook-curl-box";
 import { toggleAutomation, updateAutomationPreferences } from "@/app/(dashboard)/settings/actions";
-import { Cpu, CheckCircle2, Clock } from "lucide-react";
+import { Cpu, Clock } from "lucide-react";
 
 interface AutomationConfigCardProps {
   isEnabled: boolean;
@@ -20,7 +21,6 @@ export function AutomationConfigCard({
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [toggling, setToggling] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const handleToggle = async () => {
     setToggling(true);
@@ -28,6 +28,9 @@ export function AutomationConfigCard({
     const res = await toggleAutomation(nextState);
     if (res?.success) {
       setIsEnabled(nextState);
+      toast.success(nextState ? "Automasi terjadwal diaktifkan." : "Automasi dinonaktifkan (mode manual).");
+    } else {
+      toast.error("Gagal mengubah status automasi.");
     }
     setToggling(false);
   };
@@ -35,13 +38,13 @@ export function AutomationConfigCard({
   const handleSavePreferences = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-    setSaved(false);
 
     const formData = new FormData(e.currentTarget);
     const res = await updateAutomationPreferences(formData);
     if (res?.success) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success("Preferensi waktu submit berhasil disimpan.");
+    } else {
+      toast.error("Gagal menyimpan preferensi waktu submit.");
     }
     setSaving(false);
   };
@@ -146,15 +149,7 @@ export function AutomationConfigCard({
           />
         </div>
 
-        <div className="flex items-center justify-between">
-          {saved ? (
-            <span className="text-xs text-primary flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Preferensi tersimpan
-            </span>
-          ) : (
-            <span />
-          )}
-
+        <div className="flex items-center justify-end">
           <Button type="submit" variant="secondary" size="sm" disabled={saving}>
             {saving ? "Menyimpan..." : "Simpan Preferensi"}
           </Button>
