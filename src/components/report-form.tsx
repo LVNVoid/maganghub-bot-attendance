@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { generateReportDraft, saveReportDraft } from "@/app/(dashboard)/reports/actions";
-import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { isSunday } from "@/lib/date-utils";
+import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2, CalendarOff } from "lucide-react";
 
 interface ReportData {
   id?: string;
@@ -146,6 +147,15 @@ export function ReportForm({
           }`}
         >
           {message.text}
+        </div>
+      )}
+
+      {isSunday(date) && (
+        <div className="p-3 rounded-xs text-xs flex items-center gap-2 bg-canvas-deep border border-hairline text-ink-secondary">
+          <CalendarOff className="w-4 h-4 text-warning shrink-0" />
+          <span>
+            Tanggal {date} adalah <strong>hari Minggu (hari libur magang)</strong>. Draft pengerjaan tetap dapat disimpan, namun pengiriman laporan ke Monev Kemnaker dinonaktifkan pada hari libur.
+          </span>
         </div>
       )}
 

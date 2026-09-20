@@ -3,23 +3,30 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { submitReportAction } from "@/app/(dashboard)/reports/actions";
-import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle, Loader2, CalendarOff } from "lucide-react";
 
 interface QuickSubmitCardProps {
   todayStatus?: string | null;
   hasCredential: boolean;
   todayDate: string;
+  isHoliday?: boolean;
 }
 
 export function QuickSubmitCard({
   todayStatus,
   hasCredential,
   todayDate,
+  isHoliday = false,
 }: QuickSubmitCardProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleSubmit = async () => {
+    if (isHoliday) {
+      alert("Hari Minggu adalah hari libur magang. Pengiriman laporan harian dinonaktifkan.");
+      return;
+    }
+
     if (!hasCredential) {
       alert("Harap konfigurasi email & password MagangHub Anda di menu Pengaturan terlebih dahulu.");
       return;
@@ -42,11 +49,15 @@ export function QuickSubmitCard({
   return (
     <div className="bg-canvas-subtle border border-hairline rounded-md p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-mono uppercase text-primary font-semibold">
             Status Hari Ini &bull; {todayDate}
           </span>
-          {isSubmitted ? (
+          {isHoliday && !isSubmitted ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-surface text-ink-secondary border border-hairline">
+              <CalendarOff className="w-3 h-3 text-ink-muted" /> Hari Libur (Minggu)
+            </span>
+          ) : isSubmitted ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary-soft text-primary border border-primary/20">
               <CheckCircle2 className="w-3 h-3" /> Hadir &amp; Laporan Terkirim
             </span>
@@ -61,14 +72,16 @@ export function QuickSubmitCard({
           )}
         </div>
         <p className="text-xs text-ink-secondary">
-          {isSubmitted
+          {isHoliday && !isSubmitted
+            ? "Hari ini adalah hari Minggu (hari libur magang Kemnaker). Tidak ada kewajiban absensi atau pengiriman laporan harian."
+            : isSubmitted
             ? "Kehadiran dan laporan harian Anda untuk hari ini sudah tercatat di Monev Kemnaker."
             : "Tekan tombol di samping untuk auto-generate dan submit laporan harian langsung ke portal Monev."}
         </p>
 
         {result && (
           <div
-            className={`mt-2 text-xs p-2 rounded-xs ${
+            className={`mt-2 text-xs p-2.5 rounded-xs ${
               result.success
                 ? "text-primary bg-primary-soft border border-primary/20"
                 : "text-error bg-error/10 border border-error/20"
@@ -81,17 +94,21 @@ export function QuickSubmitCard({
 
       <Button
         onClick={handleSubmit}
-        disabled={loading || isSubmitted}
-        variant="emerald"
+        disabled={loading || isSubmitted || isHoliday}
+        variant={isHoliday ? "outline" : "emerald"}
         className="gap-2 shrink-0 h-9 text-xs"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
+        ) : isHoliday ? (
+          <CalendarOff className="w-4 h-4 text-ink-muted" />
         ) : (
           <Send className="w-4 h-4" />
         )}
         {loading
           ? "Mengirim ke Monev..."
+          : isHoliday
+          ? "Hari Libur (Minggu)"
           : isSubmitted
           ? "Sudah Terkirim"
           : "Submit Kehadiran Sekarang"}

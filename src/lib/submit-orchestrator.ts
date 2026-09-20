@@ -4,6 +4,7 @@ import { MagangHubApiClient } from "@/lib/maganghub-api";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { formatCommitsToActivitySummary } from "@/lib/activity-extractor";
 import { generateReportFromActivity } from "@/lib/ai";
+import { isSunday, getDayNameId, getTodayJakartaStr } from "@/lib/date-utils";
 import { TriggerType } from "@prisma/client";
 
 export interface SubmitOrchestratorResult {
@@ -18,11 +19,18 @@ export async function executeUserDailySubmit(
   triggeredBy: TriggerType = "MANUAL",
   targetDateStr?: string
 ): Promise<SubmitOrchestratorResult> {
-  const dateStr =
-    targetDateStr || new Date().toISOString().split("T")[0];
+  const dateStr = targetDateStr || getTodayJakartaStr();
   const dateObj = new Date(dateStr);
 
-  // 1. Ambil kredensial MagangHub pengguna
+  // 1. Pengecekan Hari Libur Magang (Hari Minggu)
+  if (isSunday(dateStr)) {
+    return {
+      success: false,
+      message: `Pengiriman laporan ditolak: Tanggal ${dateStr} adalah hari ${getDayNameId(dateStr)} (hari libur magang). Tidak ada kewajiban absensi atau pengiriman laporan harian pada hari libur.`,
+    };
+  }
+
+  // 2. Ambil kredensial MagangHub pengguna
   const cred = await db.maganghubCredential.findUnique({
     where: { userId },
   });
@@ -34,7 +42,7 @@ export async function executeUserDailySubmit(
     };
   }
 
-  // 2. Dekripsi kredensial
+  // 3. Dekripsi kredensial
   let email = "";
   let password = "";
   try {
@@ -50,7 +58,7 @@ export async function executeUserDailySubmit(
     };
   }
 
-  // 3. Ambil atau generate laporan untuk tanggal tersebut
+  // 4. Ambil atau generate laporan untuk tanggal tersebut
   let report = await db.report.findUnique({
     where: {
       userId_date: {
@@ -88,7 +96,29 @@ export async function executeUserDailySubmit(
     }
   }
 
-  // 4. Login ke Monev SSO Kemnaker
+  // 5. Validasi Kelayakan Isi Laporan (Minimal 100 Karakter per Bagian)
+  const actLen = (report.activity || "").trim().length;
+  const learnLen = (report.learning || "").trim().length;
+  const obsLen = (report.obstacles || "").trim().length;
+
+  if (actLen < 100 || learnLen < 100 || obsLen < 100) {
+    return {
+      success: false,
+      message: `Laporan belum memenuhi syarat minimal 100 karakter (Aktivitas: ${actLen}/100, Pembelajaran: ${learnLen}/100, Kendala: ${obsLen}/100). Harap lengkapi di menu Editor Laporan sebelum submit.`,
+      reportId: report.id,
+    };
+  }
+
+  // 6. Cegah duplikasi submit jika sudah berstatus SUBMITTED
+  if (report.status === "SUBMITTED") {
+    return {
+      success: true,
+      message: `Laporan untuk tanggal ${dateStr} sudah pernah disubmit ke Monev MagangHub sebelumnya.`,
+      reportId: report.id,
+    };
+  }
+
+  // 7. Login ke Monev SSO Kemnaker
   let authToken = "";
   try {
     const authResult = await MagangHubApiClient.login(email, password);
@@ -132,7 +162,7 @@ export async function executeUserDailySubmit(
     };
   }
 
-  // 5. Submit kehadiran & laporan harian
+  // 8. Submit kehadiran & laporan harian
   const submitResult = await MagangHubApiClient.submitDailyLog(authToken, {
     date: dateStr,
     status: "PRESENT",
@@ -141,7 +171,7 @@ export async function executeUserDailySubmit(
     obstacles: report.obstacles,
   });
 
-  // 6. Catat log dan update status laporan
+  // 9. Catat log dan update status laporan
   if (submitResult.success) {
     await db.report.update({
       where: { id: report.id },
