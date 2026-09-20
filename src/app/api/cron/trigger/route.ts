@@ -1,9 +1,21 @@
 import { db } from "@/lib/db";
 import { executeUserDailySubmit } from "@/lib/submit-orchestrator";
 import { getTodayJakartaStr } from "@/lib/date-utils";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown-ip";
+  const rateLimitKey = `cron:${ip}`;
+  const rateCheck = checkRateLimit(rateLimitKey, { windowMs: 60_000, maxRequests: 10 });
+
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: "Terlalu banyak permintaan (rate limit exceeded). Coba lagi nanti." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return NextResponse.json(

@@ -9,7 +9,11 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgresql://postgres:postgres@localhost:5432/maganghub?sslmode=disable";
 
-const adapter = new PrismaPg({ connectionString });
+const adapter = new PrismaPg({
+  connectionString,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 300000,
+});
 
 export const db =
   globalForPrisma.prisma ??

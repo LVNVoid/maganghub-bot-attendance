@@ -104,6 +104,8 @@ model Report {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   submitLogs SubmitLog[]
   @@unique([userId, date])
+  @@index([status])
+  @@index([userId, status])
 }
 
 model SubmitLog {
@@ -119,6 +121,10 @@ model SubmitLog {
 
   report Report? @relation(fields: [reportId], references: [id], onDelete: SetNull)
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([reportId])
+  @@index([status])
 }
 
 model AutomationConfig {
