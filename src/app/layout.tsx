@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ToasterProvider } from "@/components/toaster-provider";
-import { RootProvider } from "fumadocs-ui/provider/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,10 +24,8 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${inter.className} font-sans antialiased bg-canvas text-ink-primary min-h-screen`}
       >
-        <RootProvider>
-          <ToasterProvider />
-          {children}
-        </RootProvider>
+        <ToasterProvider />
+        {children}
       </body>
     </html>
   );
