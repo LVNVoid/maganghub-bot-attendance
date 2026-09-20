@@ -29,19 +29,19 @@ export function Sidebar({ role = "USER", onCloseMobile }: SidebarProps) {
     },
     {
       label: "Laporan Harian",
-      href: "/dashboard/reports",
+      href: "/reports",
       icon: FileText,
       exact: false,
     },
     {
       label: "Kalender Absensi",
-      href: "/dashboard/calendar",
+      href: "/calendar",
       icon: Calendar,
       exact: false,
     },
     {
       label: "Pengaturan & Bot",
-      href: "/dashboard/settings",
+      href: "/settings",
       icon: Settings,
       exact: false,
     },
@@ -50,7 +50,7 @@ export function Sidebar({ role = "USER", onCloseMobile }: SidebarProps) {
   if (role === "ADMIN") {
     navItems.push({
       label: "Admin Panel",
-      href: "/dashboard/admin",
+      href: "/admin",
       icon: ShieldCheck,
       exact: false,
     });
