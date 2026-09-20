@@ -53,7 +53,8 @@ export async function generateReportDraft(dateStr: string) {
       },
     });
 
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/reports");
+    revalidatePath("/reports/history");
     return { success: true, report };
   } catch (error: any) {
     console.error("Generate report draft error:", error);
@@ -102,7 +103,8 @@ export async function saveReportDraft(formData: FormData) {
       },
     });
 
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/reports");
+    revalidatePath("/reports/history");
     return { success: true, report };
   } catch (error: any) {
     console.error("Save report draft error:", error);
@@ -121,12 +123,59 @@ export async function submitReportAction(reportId?: string) {
     const result = await executeUserDailySubmit(session.user.id, "MANUAL");
 
     revalidatePath("/dashboard");
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/reports");
+    revalidatePath("/reports/history");
 
     return result;
   } catch (error: any) {
     console.error("Submit report action error:", error);
     return { success: false, message: error.message || "Gagal submit laporan." };
+  }
+}
+
+export async function deleteReportAction(reportId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Unauthorized" };
+  }
+
+  const userId = session.user.id;
+
+  try {
+    const report = await db.report.findUnique({
+      where: { id: reportId },
+    });
+
+    if (!report) {
+      return { error: "Laporan tidak ditemukan." };
+    }
+
+    if (report.userId !== userId) {
+      return { error: "Anda tidak memiliki izin untuk menghapus laporan ini." };
+    }
+
+    if (report.status === "SUBMITTED") {
+      return { error: "Laporan yang sudah terkirim (SUBMITTED) tidak dapat dihapus." };
+    }
+
+    // Hapus juga submitLog terkait jika ada
+    await db.submitLog.deleteMany({
+      where: { reportId },
+    });
+
+    await db.report.delete({
+      where: { id: reportId },
+    });
+
+    revalidatePath("/reports");
+    revalidatePath("/reports/history");
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+
+    return { success: true, message: "Laporan berhasil dihapus." };
+  } catch (error: any) {
+    console.error("Delete report error:", error);
+    return { error: error.message || "Gagal menghapus laporan." };
   }
 }
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
+  History,
   Calendar,
   Settings,
   ShieldCheck,
@@ -28,9 +29,15 @@ export function Sidebar({ role = "USER", onCloseMobile }: SidebarProps) {
       exact: true,
     },
     {
-      label: "Laporan Harian",
+      label: "Editor Laporan",
       href: "/reports",
       icon: FileText,
+      exact: true,
+    },
+    {
+      label: "Riwayat Laporan",
+      href: "/reports/history",
+      icon: History,
       exact: false,
     },
     {
