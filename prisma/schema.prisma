@@ -24,6 +24,7 @@ model User {
   reports        Report[]
   submitLogs     SubmitLog[]
   automation     AutomationConfig?
+  aiConfig       UserAiConfig?
 }
 
 model Account {
@@ -137,6 +138,21 @@ model AutomationConfig {
   timezone     String      @default("Asia/Jakarta")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserAiConfig {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  provider        String   @default("openai_compatible") // groq, openrouter, openai, custom
+  baseUrl         String   @default("https://api.groq.com/openai/v1")
+  modelName       String   @default("llama-3.3-70b-versatile")
+  encryptedApiKey String   // AES-256-GCM
+  iv              String   // hex
+  authTag         String   // hex
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

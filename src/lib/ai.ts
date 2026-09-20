@@ -198,18 +198,28 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
   };
 }
 
+export interface UserAiCredentials {
+  baseUrl?: string;
+  modelName?: string;
+  apiKey?: string;
+}
+
 export async function generateReportFromActivity(
-  activitySummary: string
+  activitySummary: string,
+  userConfig?: UserAiCredentials | null
 ): Promise<GeneratedReport> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = userConfig?.apiKey || process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     return generateFallbackReport(activitySummary);
   }
 
   const baseUrl =
-    process.env.OPENAI_BASE_URL || "http://43.157.204.138:20128/v1";
-  const model = process.env.OPENAI_MODEL || "combo-flash";
+    userConfig?.baseUrl ||
+    process.env.OPENAI_BASE_URL ||
+    "http://43.157.204.138:20128/v1";
+  const model =
+    userConfig?.modelName || process.env.OPENAI_MODEL || "combo-flash";
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI.

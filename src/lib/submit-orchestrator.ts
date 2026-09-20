@@ -4,6 +4,7 @@ import { MagangHubApiClient } from "@/lib/maganghub-api";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { formatCommitsToActivitySummary } from "@/lib/activity-extractor";
 import { generateReportFromActivity } from "@/lib/ai";
+import { getDecryptedUserAiConfig } from "@/services/ai-config-service";
 import { getTodayJakartaStr } from "@/lib/date-utils";
 import { TriggerType } from "@prisma/client";
 
@@ -65,7 +66,8 @@ export async function executeUserDailySubmit(
     try {
       const groups = await fetchAllTrackedCommitsForUser(userId, dateStr);
       const summary = formatCommitsToActivitySummary(groups);
-      const generated = await generateReportFromActivity(summary);
+      const userAiConfig = await getDecryptedUserAiConfig(userId);
+      const generated = await generateReportFromActivity(summary, userAiConfig);
 
       report = await db.report.create({
         data: {
@@ -89,20 +91,7 @@ export async function executeUserDailySubmit(
     }
   }
 
-  // 5. Validasi Kelayakan Isi Laporan (Minimal 100 Karakter per Bagian)
-  const actLen = (report.activity || "").trim().length;
-  const learnLen = (report.learning || "").trim().length;
-  const obsLen = (report.obstacles || "").trim().length;
-
-  if (actLen < 100 || learnLen < 100 || obsLen < 100) {
-    return {
-      success: false,
-      message: `Laporan belum memenuhi syarat minimal 100 karakter (Aktivitas: ${actLen}/100, Pembelajaran: ${learnLen}/100, Kendala: ${obsLen}/100). Harap lengkapi di menu Editor Laporan sebelum submit.`,
-      reportId: report.id,
-    };
-  }
-
-  // 6. Cegah duplikasi submit jika sudah berstatus SUBMITTED
+  // 5. Cegah duplikasi submit jika sudah berstatus SUBMITTED
   if (report.status === "SUBMITTED") {
     return {
       success: true,

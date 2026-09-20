@@ -6,9 +6,11 @@ import {
   getUserAutomationConfig,
   updateAutomationConfig,
 } from "@/services/settings-service";
+import { getUserAiConfig } from "@/services/ai-config-service";
 import { MaganghubCredentialCard } from "@/components/maganghub-credential-card";
 import { GithubRepoCard } from "@/components/github-repo-card";
 import { AutomationConfigCard } from "@/components/automation-config-card";
+import { AiConfigCard } from "@/components/ai-config-card";
 import crypto from "node:crypto";
 
 export default async function SettingsPage() {
@@ -19,11 +21,12 @@ export default async function SettingsPage() {
 
   const userId = session.user.id;
 
-  // Fetch credential, repos, and automation config in parallel via service layer
-  const [credential, repos, automation] = await Promise.all([
+  // Fetch credential, repos, automation config, and AI config in parallel via service layer
+  const [credential, repos, automation, aiConfig] = await Promise.all([
     getUserMaganghubCredential(userId),
     getUserTrackedRepos(userId),
     getUserAutomationConfig(userId),
+    getUserAiConfig(userId),
   ]);
 
   // Ensure an automationConfig exists for the user
@@ -62,6 +65,13 @@ export default async function SettingsPage() {
       </div>
 
       <div className="space-y-6">
+        <AiConfigCard
+          hasConfig={!!aiConfig}
+          provider={aiConfig?.provider}
+          baseUrl={aiConfig?.baseUrl}
+          modelName={aiConfig?.modelName}
+        />
+
         <MaganghubCredentialCard
           status={credential?.status || "UNCHECKED"}
           hasCredential={!!credential}

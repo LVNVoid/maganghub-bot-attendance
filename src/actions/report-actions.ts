@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { formatCommitsToActivitySummary } from "@/lib/activity-extractor";
 import { generateReportFromActivity } from "@/lib/ai";
+import { getDecryptedUserAiConfig } from "@/services/ai-config-service";
 import {
   saveReportSchema,
   deleteReportSchema,
@@ -43,7 +44,8 @@ export async function generateReportDraft(
   try {
     const groups = await fetchAllTrackedCommitsForUser(userId, targetDate);
     const summary = formatCommitsToActivitySummary(groups);
-    const generated = await generateReportFromActivity(summary);
+    const userAiConfig = await getDecryptedUserAiConfig(userId);
+    const generated = await generateReportFromActivity(summary, userAiConfig);
 
     const report = await db.report.upsert({
       where: {
