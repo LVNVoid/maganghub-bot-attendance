@@ -207,8 +207,10 @@ export async function generateReportFromActivity(
     return generateFallbackReport(activitySummary);
   }
 
-  const endpoint = "https://api.openai.com/v1/chat/completions";
-  const model = "gpt-4o-mini";
+  const baseUrl =
+    process.env.OPENAI_BASE_URL || "http://43.157.204.138:20128/v1";
+  const model = process.env.OPENAI_MODEL || "combo-flash";
+  const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI.
 Tugas Anda adalah mengubah ringkasan commit/aktivitas teknis pengguna menjadi laporan harian resmi, terstruktur, kontekstual, dan mudah dipahami oleh pembimbing maupun manajemen.
@@ -241,6 +243,7 @@ ATURAN UTAMA:
             content: `Berikut adalah ringkasan aktivitas/commit hari ini:\n${activitySummary}\n\nBuat laporan magang harian 3 bagian (masing-masing minimal 100 karakter).`,
           },
         ],
+        stream: false,
         response_format: { type: "json_object" },
         temperature: 0.7,
       },
@@ -249,15 +252,17 @@ ATURAN UTAMA:
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        timeout: 15000,
+        timeout: 25000,
       }
     );
 
-    const content = response.data?.choices?.[0]?.message?.content;
+    let content = response.data?.choices?.[0]?.message?.content;
     if (!content) {
       return generateFallbackReport(activitySummary);
     }
 
+    // Clean any markdown wrapper if present
+    content = content.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
     const parsed = JSON.parse(content);
 
     return {
