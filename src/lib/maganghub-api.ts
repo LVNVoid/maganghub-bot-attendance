@@ -75,6 +75,8 @@ export class MagangHubApiClient {
       // Step 2: Ambil CSRF Token dan Session Cookie dari SSO Kemnaker
       const ssoPageRes = await axios.get(ssoUrl, {
         headers: {
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         },
@@ -128,8 +130,42 @@ export class MagangHubApiClient {
         throw new Error(`Login SSO Kemnaker gagal: ${errDetail}`);
       }
 
-      const redirectUri =
+      let redirectUri =
         loginRes.data?.data?.redirect_uri || loginRes.data?.redirect_uri;
+
+      // Ambil updated session cookie dari login response jika ada
+      const loginSetCookie: unknown = loginRes.headers["set-cookie"];
+      let authedSessionCookie = sessionCookie;
+      if (Array.isArray(loginSetCookie)) {
+        authedSessionCookie = loginSetCookie.map((c) => String(c).split(";")[0]).join("; ");
+      } else if (typeof loginSetCookie === "string") {
+        authedSessionCookie = (loginSetCookie as string).split(";")[0];
+      }
+
+      if (!redirectUri) {
+        // Jika belum ada redirect_uri, kirim POST /auth untuk authorize OAuth client
+        const authRes = await axios.post(
+          "https://account.kemnaker.go.id/auth",
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              "X-CSRF-TOKEN": csrfToken,
+              "X-Requested-With": "XMLHttpRequest",
+              Cookie: authedSessionCookie,
+              Referer: ssoUrl,
+              Origin: "https://account.kemnaker.go.id",
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            },
+            timeout: 10000,
+          }
+        );
+
+        redirectUri = authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri;
+      }
+
       if (!redirectUri) {
         throw new Error(
           loginRes.data?.message ||
