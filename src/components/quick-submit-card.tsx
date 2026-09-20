@@ -1,0 +1,101 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { submitReportAction } from "@/app/(dashboard)/reports/actions";
+import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+
+interface QuickSubmitCardProps {
+  todayStatus?: string | null;
+  hasCredential: boolean;
+  todayDate: string;
+}
+
+export function QuickSubmitCard({
+  todayStatus,
+  hasCredential,
+  todayDate,
+}: QuickSubmitCardProps) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleSubmit = async () => {
+    if (!hasCredential) {
+      alert("Harap konfigurasi email & password MagangHub Anda di menu Pengaturan terlebih dahulu.");
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+
+    const res = await submitReportAction();
+    if ("error" in res && res.error) {
+      setResult({ success: false, message: res.error });
+    } else {
+      setResult(res as { success: boolean; message: string });
+    }
+    setLoading(false);
+  };
+
+  const isSubmitted = todayStatus === "SUBMITTED" || result?.success;
+
+  return (
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono uppercase text-primary font-semibold">
+            Status Hari Ini &bull; {todayDate}
+          </span>
+          {isSubmitted ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary-soft text-primary border border-primary/20">
+              <CheckCircle2 className="w-3 h-3" /> Hadir &amp; Laporan Terkirim
+            </span>
+          ) : todayStatus === "FAILED" ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-error/10 text-error border border-error/20">
+              <AlertCircle className="w-3 h-3" /> Gagal Submit
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-warning/10 text-warning border border-warning/20">
+              Menunggu Submit
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-ink-secondary">
+          {isSubmitted
+            ? "Kehadiran dan laporan harian Anda untuk hari ini sudah tercatat di Monev Kemnaker."
+            : "Tekan tombol di samping untuk auto-generate dan submit laporan harian langsung ke portal Monev."}
+        </p>
+
+        {result && (
+          <div
+            className={`mt-2 text-xs p-2 rounded-xs ${
+              result.success
+                ? "text-primary bg-primary-soft border border-primary/20"
+                : "text-error bg-error/10 border border-error/20"
+            }`}
+          >
+            {result.message}
+          </div>
+        )}
+      </div>
+
+      <Button
+        onClick={handleSubmit}
+        disabled={loading || isSubmitted}
+        variant="emerald"
+        className="gap-2 shrink-0 h-9 text-xs"
+      >
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Send className="w-4 h-4" />
+        )}
+        {loading
+          ? "Mengirim ke Monev..."
+          : isSubmitted
+          ? "Sudah Terkirim"
+          : "Submit Kehadiran Sekarang"}
+      </Button>
+    </div>
+  );
+}

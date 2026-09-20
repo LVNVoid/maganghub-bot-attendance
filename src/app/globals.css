@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand & Accent */
+  --primary: #3ecf8e;
+  --primary-hover: #24b47e;
+  --primary-soft: rgba(62, 207, 142, 0.15);
+  --accent: #00c573;
+
+  /* Neutral Scale (Dark Mode Native) */
+  --canvas: #171717;
+  --canvas-deep: #0f0f0f;
+  --canvas-subtle: #1c1c1c;
+  --surface: #232323;
+  --surface-elevated: #2a2a2a;
+
+  /* Typography & Ink */
+  --ink-primary: #fafafa;
+  --ink-secondary: #b4b4b4;
+  --ink-muted: #898989;
+
+  /* Borders & Dividers */
+  --hairline: #2e2e2e;
+  --hairline-subtle: #242424;
+  --hairline-prominent: #363636;
+  --hairline-accent: rgba(62, 207, 142, 0.3);
+
+  /* Semantic */
+  --success: #3ecf8e;
+  --error: #f97583;
+  --warning: #e3b341;
+  --info: #79c0ff;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+
+  --color-canvas: var(--canvas);
+  --color-canvas-deep: var(--canvas-deep);
+  --color-canvas-subtle: var(--canvas-subtle);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-hairline: var(--hairline);
+  --color-hairline-subtle: var(--hairline-subtle);
+  --color-hairline-prominent: var(--hairline-prominent);
+  --color-hairline-accent: var(--hairline-accent);
+
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--ink-primary);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
