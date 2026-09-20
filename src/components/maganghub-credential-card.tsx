@@ -3,8 +3,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { saveMaganghubCredential } from "@/app/(dashboard)/settings/actions";
-import { Eye, EyeOff, KeyRound, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  saveMaganghubCredential,
+  testMaganghubConnection,
+} from "@/app/(dashboard)/settings/actions";
+import {
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Activity,
+} from "lucide-react";
 
 interface MaganghubCredentialCardProps {
   status?: string;
@@ -19,8 +30,26 @@ export function MaganghubCredentialCard({
 }: MaganghubCredentialCardProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    const res = await testMaganghubConnection();
+    if ("error" in res && res.error) {
+      setTestResult({ success: false, message: res.error });
+    } else {
+      setTestResult(res as { success: boolean; message: string });
+    }
+    setTesting(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -96,6 +125,23 @@ export function MaganghubCredentialCard({
         </div>
       )}
 
+      {testResult && (
+        <div
+          className={`p-3 rounded-sm text-xs flex items-center gap-2 ${
+            testResult.success
+              ? "bg-primary-soft border border-primary/20 text-primary"
+              : "bg-error/10 border border-error/20 text-error"
+          }`}
+        >
+          {testResult.success ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span>{testResult.message}</span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
           <label className="text-xs font-medium text-ink-secondary">
@@ -134,22 +180,42 @@ export function MaganghubCredentialCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           <span className="text-[11px] text-ink-muted">
             {lastCheckedAt
               ? `Terakhir dicek: ${new Date(lastCheckedAt).toLocaleString("id-ID")}`
               : "Belum pernah dicek"}
           </span>
 
-          <Button
-            type="submit"
-            variant="emerald"
-            disabled={loading}
-            className="gap-2"
-          >
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Simpan Kredensial
-          </Button>
+          <div className="flex items-center gap-2">
+            {hasCredential && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleTestConnection}
+                disabled={testing || loading}
+                className="gap-1.5 text-xs h-9 border-hairline hover:border-primary text-ink-secondary hover:text-primary"
+              >
+                {testing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Activity className="w-3.5 h-3.5" />
+                )}
+                {testing ? "Menguji Login..." : "Uji Login Monev"}
+              </Button>
+            )}
+
+            <Button
+              type="submit"
+              variant="emerald"
+              disabled={loading || testing}
+              className="gap-2 h-9 text-xs"
+            >
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Simpan Kredensial
+            </Button>
+          </div>
         </div>
       </form>
     </div>

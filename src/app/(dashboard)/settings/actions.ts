@@ -53,11 +53,71 @@ export async function saveMaganghubCredential(formData: FormData) {
       },
     });
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/settings");
     return { success: true };
   } catch (err) {
     console.error("Save credential error:", err);
     return { error: "Gagal menyimpan kredensial." };
+  }
+}
+
+export async function testMaganghubConnection() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Unauthorized" };
+  }
+
+  const cred = await db.maganghubCredential.findUnique({
+    where: { userId: session.user.id },
+  });
+
+  if (!cred) {
+    return { error: "Kredensial belum disimpan. Harap simpan email & password terlebih dahulu." };
+  }
+
+  try {
+    const { decrypt } = await import("@/lib/crypto");
+    const { MagangHubApiClient } = await import("@/lib/maganghub-api");
+
+    const decryptedJson = decrypt(cred.encryptedPassword, cred.iv, cred.authTag);
+    const { email, password } = JSON.parse(decryptedJson);
+
+    // Call direct REST API login
+    await MagangHubApiClient.login(email, password);
+
+    await db.maganghubCredential.update({
+      where: { userId: session.user.id },
+      data: {
+        status: "VALID",
+        lastCheckedAt: new Date(),
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: "Koneksi berhasil! Akun valid dan berhasil terautentikasi di SSO Kemnaker / Monev.",
+    };
+  } catch (err: any) {
+    console.error("Test connection error:", err);
+
+    await db.maganghubCredential.update({
+      where: { userId: session.user.id },
+      data: {
+        status: "INVALID",
+        lastCheckedAt: new Date(),
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+
+    return {
+      success: false,
+      message: err.message || "Login gagal. Periksa kembali email dan password Anda.",
+    };
   }
 }
 
