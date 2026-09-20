@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { saveMaganghubCredential } from "@/app/(dashboard)/settings/actions";
+import { saveMaganghubCredential } from "@/app/(dashboard)/dashboard/settings/actions";
 import { Eye, EyeOff, KeyRound, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface MaganghubCredentialCardProps {
