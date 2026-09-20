@@ -11,7 +11,6 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/reports") ||
     req.nextUrl.pathname.startsWith("/calendar") ||
     req.nextUrl.pathname.startsWith("/settings") ||
-    req.nextUrl.pathname.startsWith("/docs") ||
     isAdminRoute;
 
   const isAuthRoute =
@@ -39,7 +38,6 @@ export const config = {
     "/reports/:path*",
     "/calendar/:path*",
     "/settings/:path*",
-    "/docs/:path*",
     "/admin/:path*",
     "/login",
     "/register",

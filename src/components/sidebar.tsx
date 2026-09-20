@@ -10,7 +10,6 @@ import {
   Settings,
   ShieldCheck,
   Bot,
-  BookOpen,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 
@@ -51,12 +50,6 @@ export function Sidebar({ role = "USER", onCloseMobile }: SidebarProps) {
       label: "Pengaturan & Bot",
       href: "/settings",
       icon: Settings,
-      exact: false,
-    },
-    {
-      label: "Dokumentasi & Panduan",
-      href: "/docs",
-      icon: BookOpen,
       exact: false,
     },
   ];
