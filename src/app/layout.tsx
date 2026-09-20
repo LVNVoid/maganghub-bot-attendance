@@ -6,6 +6,7 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className="dark">
-      <body className={`${inter.variable} antialiased bg-canvas text-ink-primary min-h-screen`}>
+      <body
+        className={`${inter.variable} ${inter.className} font-sans antialiased bg-canvas text-ink-primary min-h-screen`}
+      >
         <ToasterProvider />
         {children}
       </body>
