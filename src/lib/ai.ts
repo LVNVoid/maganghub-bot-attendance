@@ -22,19 +22,27 @@ export function ensureMinLength(text: string, fallbackAddition: string): string 
 }
 
 export function generateFallbackReport(activitySummary: string): GeneratedReport {
+  // Extract clean lines from activitySummary
+  const lines = activitySummary
+    .split("\n")
+    .map((l) => l.trim().replace(/^-\s*(\[[^\]]+\]:\s*)?/, "").replace(/\s*\([a-f0-9]{7,}\)/gi, ""))
+    .filter(Boolean);
+
+  const cleanDescription = lines.join("; ") || "Melakukan penyesuaian kode, perbaikan bug, dan pengujian fungsionalitas fitur aplikasi.";
+
   const activity_log = ensureMinLength(
-    `Melaksanakan pengerjaan tugas pengembangan perangkat lunak sesuai prioritas sprint, mencakup integrasi modul, refactoring struktur logika, serta pengujian berkala pada alur kerja sistem: ${activitySummary}.`,
-    "Seluruh aktivitas didokumentasikan dan diuji untuk memastikan stabilitas fungsionalitas aplikasi berjalan optimal."
+    `Melaksanakan pengerjaan tugas pengembangan perangkat lunak sesuai target sprint, dengan fokus aktivitas: ${cleanDescription}.`,
+    "Seluruh implementasi telah diuji secara menyeluruh untuk memastikan stabilitas dan kesiapan fungsionalitas sistem berjalan dengan optimal."
   );
 
   const lesson_learned = ensureMinLength(
-    "Memahami alur implementasi fitur secara komprehensif, pentingnya validasi skema data pada setiap layer aplikasi, serta teknik optimasi penanganan error dan pemeliharaan kode yang terstruktur.",
-    "Pembelajaran ini memperkuat pemahaman mengenai standar rekayasa perangkat lunak yang andal dan terukur dalam skala produksi."
+    `Memperoleh pemahaman mendalam terkait implementasi dan pemeliharaan komponen perangkat lunak, pentingnya validasi alur data secara konsisten, serta penguatan teknik debugging yang efektif dalam siklus pengembangan aplikasi modern.`,
+    "Pembelajaran ini memperkuat kemampuan analisis teknis dan penerapan standar rekayasa perangkat lunak yang terstruktur pada skala produksi."
   );
 
   const obstacles = ensureMinLength(
-    "Menyesuaikan konfigurasi lingkungan pengembangan serta sinkronisasi penanganan error pada komunikasi antar-layanan, yang berhasil diatasi melalui penelusuran log sistem dan penyesuaian parameter secara sistematis.",
-    "Tidak ada kendala kritis lain yang menghambat jalannya pengerjaan tugas harian."
+    `Menghadapi penyesuaian konfigurasi dan sinkronisasi parameter teknis pada alur kerja aplikasi, yang berhasil diatasi melalui penelusuran log secara cermat serta pengujian berulang hingga seluruh fungsi berjalan sesuai spesifikasi.`,
+    "Tidak ada kendala kritis lain yang menghambat pelaksanaan tugas pengerjaan hari ini."
   );
 
   return {

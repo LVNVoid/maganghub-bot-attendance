@@ -45,9 +45,10 @@ export async function fetchRepoCommits({
   branch?: string;
   date: string; // YYYY-MM-DD
   token?: string;
-}): Promise<GitHubCommit[]> {
-  const since = `${date}T00:00:00Z`;
-  const until = `${date}T23:59:59Z`;
+}): Promise<{ commits: GitHubCommit[]; detectedBranch: string }> {
+  // Use Jakarta timezone (WIB, UTC+7) window
+  const since = new Date(`${date}T00:00:00+07:00`).toISOString();
+  const until = new Date(`${date}T23:59:59+07:00`).toISOString();
 
   const headers: Record<string, string> = {
     Accept: "application/vnd.github.v3+json",
@@ -58,20 +59,54 @@ export async function fetchRepoCommits({
     headers.Authorization = `token ${token}`;
   }
 
+  let activeBranch = branch;
+
   try {
-    const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}/commits`,
-      {
-        params: {
-          sha: branch,
-          since,
-          until,
-          per_page: 50,
-        },
-        headers,
-        timeout: 10000,
+    let response;
+    try {
+      response = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/commits`,
+        {
+          params: {
+            sha: activeBranch,
+            since,
+            until,
+            per_page: 50,
+          },
+          headers,
+          timeout: 10000,
+        }
+      );
+    } catch (branchErr: any) {
+      // If branch not found (404), fetch default branch from repo info
+      if (branchErr.response?.status === 404) {
+        const repoInfo = await axios.get(
+          `https://api.github.com/repos/${owner}/${repo}`,
+          { headers, timeout: 8000 }
+        );
+        const defaultBranch = repoInfo.data?.default_branch || "master";
+        if (defaultBranch !== activeBranch) {
+          activeBranch = defaultBranch;
+          response = await axios.get(
+            `https://api.github.com/repos/${owner}/${repo}/commits`,
+            {
+              params: {
+                sha: activeBranch,
+                since,
+                until,
+                per_page: 50,
+              },
+              headers,
+              timeout: 10000,
+            }
+          );
+        } else {
+          throw branchErr;
+        }
+      } else {
+        throw branchErr;
       }
-    );
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawCommits = response.data.map((item: any) => ({
@@ -82,7 +117,8 @@ export async function fetchRepoCommits({
       url: item.html_url,
     }));
 
-    return rawCommits.filter((c: GitHubCommit) => isUsefulCommit(c.message));
+    const commits = rawCommits.filter((c: GitHubCommit) => isUsefulCommit(c.message));
+    return { commits, detectedBranch: activeBranch };
   } catch (error: any) {
     if (error.response?.status === 404) {
       throw new Error(`Repository ${owner}/${repo} tidak ditemukan atau private.`);
@@ -108,6 +144,12 @@ export async function fetchAllTrackedCommitsForUser(
     return [];
   }
 
+  // Look for GitHub OAuth access token from user accounts
+  const ghAccount = await db.account.findFirst({
+    where: { userId, provider: "github" },
+  });
+  const token = ghAccount?.access_token || process.env.GITHUB_TOKEN;
+
   const results: RepoCommitGroup[] = [];
 
   for (const r of trackedRepos) {
@@ -115,17 +157,26 @@ export async function fetchAllTrackedCommitsForUser(
     if (!owner || !repo) continue;
 
     try {
-      const commits = await fetchRepoCommits({
+      const { commits, detectedBranch } = await fetchRepoCommits({
         owner,
         repo,
         branch: r.branch,
         date,
+        token,
       });
+
+      // Update repo branch in DB if auto-detected different branch
+      if (detectedBranch !== r.branch) {
+        await db.githubRepo.update({
+          where: { id: r.id },
+          data: { branch: detectedBranch },
+        });
+      }
 
       if (commits.length > 0) {
         results.push({
           repoFullName: r.repoFullName,
-          branch: r.branch,
+          branch: detectedBranch,
           commits,
         });
       }
