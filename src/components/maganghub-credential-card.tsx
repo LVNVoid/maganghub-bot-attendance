@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   saveMaganghubCredential,
   deleteMaganghubCredential,
@@ -39,6 +40,7 @@ export function MaganghubCredentialCard({
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{
@@ -60,14 +62,12 @@ export function MaganghubCredentialCard({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus kredensial MagangHub yang tersimpan?")) {
-      return;
-    }
     setDeleting(true);
     setError(null);
     setTestResult(null);
 
     const res = await deleteMaganghubCredential();
+    setShowDeleteConfirm(false);
     if (res?.error) {
       setError(res.error);
     } else {
@@ -224,7 +224,7 @@ export function MaganghubCredentialCard({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={testing || deleting}
                 className="gap-1.5 text-xs h-9 border-hairline border-error/30 text-error hover:bg-error/10 hover:border-error"
               >
@@ -318,6 +318,19 @@ export function MaganghubCredentialCard({
           </div>
         </form>
       )}
+
+      {/* Confirm Dialog Hapus Kredensial */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Hapus Kredensial MagangHub"
+        description="Apakah Anda yakin ingin menghapus kredensial MagangHub yang tersimpan? Bot tidak akan dapat melakukan absensi atau mengirimkan laporan otomatis sampai kredensial baru ditambahkan."
+        confirmText="Ya, Hapus Kredensial"
+        cancelText="Batal"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

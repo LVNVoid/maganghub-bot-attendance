@@ -6,6 +6,7 @@ import Link from "next/link";
 import { deleteReportAction } from "@/app/(dashboard)/reports/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Trash2,
   Edit3,
@@ -48,6 +49,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
   const [actionMessage, setActionMessage] = useState<{
     text: string;
     type: "success" | "error";
@@ -79,30 +81,29 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   const startIndex = (safePage - 1) * PAGE_SIZE;
   const paginatedReports = filteredReports.slice(startIndex, startIndex + PAGE_SIZE);
 
-  const handleDelete = async (report: ReportItem) => {
-    if (report.status === "SUBMITTED") {
+  const confirmDelete = async () => {
+    if (!reportToDelete) return;
+    const target = reportToDelete;
+
+    if (target.status === "SUBMITTED") {
       alert("Laporan yang sudah berstatus SUBMITTED tidak dapat dihapus.");
+      setReportToDelete(null);
       return;
     }
 
-    const confirmDelete = window.confirm(
-      `Apakah Anda yakin ingin menghapus draft laporan tanggal ${report.date}? Tindakan ini tidak dapat dibatalkan.`
-    );
-
-    if (!confirmDelete) return;
-
-    setDeletingId(report.id);
+    setDeletingId(target.id);
     setActionMessage(null);
 
     startTransition(async () => {
-      const res = await deleteReportAction(report.id);
+      const res = await deleteReportAction(target.id);
       setDeletingId(null);
+      setReportToDelete(null);
 
       if (res.error) {
         setActionMessage({ text: res.error, type: "error" });
       } else {
         setActionMessage({
-          text: `Laporan tanggal ${report.date} berhasil dihapus.`,
+          text: `Laporan tanggal ${target.date} berhasil dihapus.`,
           type: "success",
         });
         router.refresh();
@@ -313,12 +314,12 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                               variant="destructive"
                               size="sm"
                               disabled={isDeleting}
-                              onClick={() => handleDelete(r)}
+                              onClick={() => setReportToDelete(r)}
                               className="h-7 px-2 text-[11px] gap-1"
                               title="Hapus laporan ini"
                             >
                               {isDeleting ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
                                 <Trash2 className="w-3 h-3" />
                               )}
@@ -381,6 +382,19 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
           </div>
         )}
       </div>
+
+      {/* Reusable Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={!!reportToDelete}
+        onClose={() => setReportToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Hapus Draft Laporan"
+        description={`Apakah Anda yakin ingin menghapus draft laporan tanggal ${reportToDelete?.date}? Tindakan ini akan menghapus seluruh isi aktivitas, pembelajaran, dan kendala untuk tanggal tersebut.`}
+        confirmText="Ya, Hapus Draft"
+        cancelText="Batal"
+        variant="danger"
+        loading={isPending}
+      />
     </div>
   );
 }
