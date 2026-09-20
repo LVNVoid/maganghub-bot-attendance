@@ -64,11 +64,11 @@ Sebelum menjalankan proyek ini, pastikan Anda telah menyiapkan:
    - Buka GitHub Settings -> Developer settings -> OAuth Apps -> New OAuth App.
    - Homepage URL: `http://localhost:3000` (atau domain production Anda).
    - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`.
-4. **Encryption Key**: 32-byte hex key (64 karakter hex) untuk enkripsi AES-256-GCM.
-5. **AI Gateway (9router)**:
-   - Endpoint: `http://43.157.204.138:20128/v1`
-   - Model: `combo-flash`
-   - API Key: `OPENAI_API_KEY`
+4. **Encryption Key**: 32-byte hex key (64 karakter hex) untuk enkripsi AES-256-GCM kredensial dan API Key user.
+5. **AI Provider (BYOK / Bring Your Own Key)**:
+   - Setiap pengguna dapat memasukkan API Key mereka sendiri melalui menu **Pengaturan** (misal: Groq gratis `https://api.groq.com/openai/v1`, OpenRouter, atau OpenAI).
+   - Server juga menyediakan **Smart Local Synthesizer (0-Token)** yang otomatis mengonversi commit message ke laporan baku tanpa biaya AI jika user belum mengisi API Key.
+   - Variabel `OPENAI_API_KEY` di server opsional sebagai fallback bawaan.
 
 ---
 
@@ -152,7 +152,21 @@ npm run start
 3. Klik **Simpan Kredensial**. Password langsung dienkripsi menggunakan AES-256-GCM sebelum disimpan ke database.
 4. Klik tombol **Uji Login Monev** untuk memastikan akun Kemnaker valid dan dapat berkomunikasi dengan portal Monev.
 
-### 3. Hubungkan Repository GitHub
+### 3. Konfigurasi AI Pribadi (BYOK - Bring Your Own Key)
+1. Buka menu **Pengaturan & Bot** (`/settings`) -> card **Model AI Pribadi (BYOK)**.
+2. Pilih preset yang diinginkan:
+   - **Groq (Gratis / Rekomendasi)**: Base URL `https://api.groq.com/openai/v1`, Model `llama-3.3-70b-versatile`. Dapatkan key gratis di [console.groq.com/keys](https://console.groq.com/keys).
+   - **OpenRouter**: Base URL `https://openrouter.ai/api/v1`, Model `meta-llama/llama-3.3-70b-instruct`.
+   - **OpenAI**: Base URL `https://api.openai.com/v1`, Model `gpt-4o-mini`.
+   - **Custom**: Masukkan Base URL dan model server AI Anda sendiri.
+3. Masukkan API Key Anda lalu klik **Simpan Konfigurasi AI**. Kunci disimpan terenkripsi AES-256-GCM.
+4. Klik tombol **Uji Koneksi AI** untuk memastikan koneksi ke model AI berhasil.
+5. Indikator kesiapan AI akan otomatis menyala:
+   - **Dashboard**: Kartu metrik "Status Model AI" berubah menjadi 🟢 `Siap (BYOK)` dengan nama model aktif.
+   - **Editor Laporan**: Badge di samping tombol Generate AI berubah menjadi 🟢 `AI Siap • <model>`.
+   - Jika belum mengisi API Key, sistem tetap dapat digunakan dengan indikator 🟡 `Fallback (0-Token)`.
+
+### 4. Hubungkan Repository GitHub
 1. Pada menu **Pengaturan & Bot** -> card **GitHub Repositories**.
 2. Masukkan nama repository yang sedang dikerjakan dengan format `owner/repo` (contoh: `LVNVoid/lvn` atau URL GitHub) dan tentukan branch (default: `main` / auto-detect).
 3. Klik **Tambah Repo**. Anda dapat menambahkan lebih dari satu repository.
