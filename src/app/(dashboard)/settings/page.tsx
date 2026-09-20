@@ -40,6 +40,20 @@ export default async function SettingsPage() {
     });
   }
 
+  let emailDisplay = "";
+  if (credential) {
+    try {
+      const { decrypt } = await import("@/lib/crypto");
+      const decrypted = decrypt(credential.encryptedPassword, credential.iv, credential.authTag);
+      const parsed = JSON.parse(decrypted);
+      if (parsed.email) {
+        emailDisplay = parsed.email;
+      }
+    } catch {
+      emailDisplay = "Akun Tersimpan";
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -56,6 +70,7 @@ export default async function SettingsPage() {
           status={credential?.status || "UNCHECKED"}
           hasCredential={!!credential}
           lastCheckedAt={credential?.lastCheckedAt}
+          emailDisplay={emailDisplay}
         />
 
         <GithubRepoCard repos={repos} />

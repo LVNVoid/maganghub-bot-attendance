@@ -61,6 +61,26 @@ export async function saveMaganghubCredential(formData: FormData) {
   }
 }
 
+export async function deleteMaganghubCredential() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    await db.maganghubCredential.deleteMany({
+      where: { userId: session.user.id },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err) {
+    console.error("Delete credential error:", err);
+    return { error: "Gagal menghapus kredensial." };
+  }
+}
+
 export async function testMaganghubConnection() {
   const session = await auth();
   if (!session?.user?.id) {
