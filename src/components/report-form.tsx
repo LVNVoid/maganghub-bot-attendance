@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { generateReportDraft, saveReportDraft } from "@/app/(dashboard)/dashboard/reports/actions";
+import { generateReportDraft, saveReportDraft } from "@/app/(dashboard)/reports/actions";
 import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 
 interface ReportData {

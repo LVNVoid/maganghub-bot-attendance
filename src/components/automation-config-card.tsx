@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { WebhookCurlBox } from "@/components/webhook-curl-box";
-import { toggleAutomation, updateAutomationPreferences } from "@/app/(dashboard)/dashboard/settings/actions";
+import { toggleAutomation, updateAutomationPreferences } from "@/app/(dashboard)/settings/actions";
 import { Cpu, CheckCircle2, Clock } from "lucide-react";
 
 interface AutomationConfigCardProps {

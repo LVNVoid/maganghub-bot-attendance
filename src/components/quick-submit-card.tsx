@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { submitReportAction } from "@/app/(dashboard)/dashboard/reports/actions";
+import { submitReportAction } from "@/app/(dashboard)/reports/actions";
 import { Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 interface QuickSubmitCardProps {
