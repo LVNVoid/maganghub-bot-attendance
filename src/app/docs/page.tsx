@@ -74,14 +74,44 @@ export default function DocsPage() {
         </p>
       </div>
 
-      {/* Main Grid: Sidebar Navigation + Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Navigation Sidebar */}
-        <div className="lg:col-span-1 space-y-1">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-muted px-3 py-1">
-            Daftar Materi
+      {/* Main Container: Side-by-Side (Left Nav + Right Content) */}
+      <div className="flex flex-col md:flex-row items-start gap-8">
+        {/* Navigation Sidebar (Left) */}
+        <aside className="w-full md:w-64 lg:w-72 shrink-0 md:sticky md:top-20 space-y-2">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-muted px-3 py-1 flex items-center justify-between">
+            <span>Daftar Materi</span>
+            <span className="text-[10px] text-primary font-bold">8 Topik</span>
           </div>
-          <nav className="space-y-1">
+
+          {/* Desktop & Tablet Vertical Navigation */}
+          <nav className="hidden md:flex flex-col space-y-1 bg-canvas-subtle/70 border border-hairline p-2 rounded-lg">
+            {SECTIONS.map((sec, idx) => {
+              const Icon = sec.icon;
+              const isActive = activeSection === sec.id;
+              return (
+                <button
+                  key={sec.id}
+                  onClick={() => setActiveSection(sec.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-xs font-medium transition-colors text-left ${
+                    isActive
+                      ? "bg-primary-soft text-primary font-semibold border border-primary/25 shadow-xs"
+                      : "text-ink-secondary hover:text-ink-primary hover:bg-surface border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-primary" : "text-ink-muted"}`} />
+                    <span className="truncate">{sec.label}</span>
+                  </div>
+                  <span className={`text-[10px] font-mono shrink-0 ml-2 ${isActive ? "text-primary" : "text-ink-muted"}`}>
+                    0{idx + 1}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Mobile Horizontal Scrollable Tabs */}
+          <div className="flex md:hidden overflow-x-auto gap-2 pb-2 scrollbar-none">
             {SECTIONS.map((sec) => {
               const Icon = sec.icon;
               const isActive = activeSection === sec.id;
@@ -89,10 +119,10 @@ export default function DocsPage() {
                 <button
                   key={sec.id}
                   onClick={() => setActiveSection(sec.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xs text-xs font-medium transition-colors text-left ${
+                  className={`whitespace-nowrap flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium border transition-colors shrink-0 ${
                     isActive
-                      ? "bg-primary-soft text-primary font-semibold border border-primary/20"
-                      : "text-ink-secondary hover:text-ink-primary hover:bg-surface border border-transparent"
+                      ? "bg-primary-soft text-primary font-semibold border-primary/30"
+                      : "bg-canvas-subtle text-ink-secondary hover:text-ink-primary border-hairline"
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? "text-primary" : "text-ink-muted"}`} />
@@ -100,12 +130,12 @@ export default function DocsPage() {
                 </button>
               );
             })}
-          </nav>
-        </div>
+          </div>
+        </aside>
 
-        {/* Content Area */}
-        <div className="lg:col-span-3">
-          <div className="bg-canvas-subtle border border-hairline rounded-md p-6 sm:p-8 space-y-6">
+        {/* Content Area (Right) */}
+        <div className="flex-1 min-w-0 w-full">
+          <div className="bg-canvas-subtle border border-hairline rounded-lg p-6 sm:p-8 space-y-6">
             {/* Section 1: Quickstart */}
             {activeSection === "quickstart" && (
               <div className="space-y-6">
