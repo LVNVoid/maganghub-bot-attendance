@@ -113,10 +113,10 @@ export function MaganghubCredentialCard({
   };
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-4 sm:space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <KeyRound className="w-4 h-4" />
           </div>
           <div>
@@ -128,46 +128,46 @@ export function MaganghubCredentialCard({
             </p>
           </div>
         </div>
-        {getStatusBadge()}
+        <div>{getStatusBadge()}</div>
       </div>
 
       {hasCredential && !isEditing ? (
-        <div className="space-y-4">
-          <div className="p-4 rounded-sm bg-canvas border border-hairline flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="p-3.5 sm:p-4 rounded-sm bg-canvas border border-hairline flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-soft/50 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                <ShieldCheck className="w-5 h-5" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-soft/50 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-ink-primary">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs sm:text-sm font-medium text-ink-primary truncate">
                     {emailDisplay || "Kredensial Tersimpan"}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface text-ink-muted border border-hairline font-mono">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface text-ink-muted border border-hairline font-mono shrink-0">
                     AES-256-GCM
                   </span>
                 </div>
-                <p className="text-xs text-ink-muted mt-0.5">
+                <p className="text-[11px] sm:text-xs text-ink-muted mt-0.5">
                   Password tersimpan aman terenkripsi di database.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-end md:self-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto pt-2 md:pt-0 border-t border-hairline/60 md:border-0">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleTestConnection}
                 disabled={testing || deleting}
-                className="gap-1.5 text-xs h-9 border-hairline hover:border-primary text-ink-secondary hover:text-primary"
+                className="flex-1 sm:flex-initial gap-1.5 text-xs h-9 sm:h-8 border-hairline hover:border-primary text-ink-secondary hover:text-primary"
               >
                 {testing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Activity className="w-3.5 h-3.5" />
                 )}
-                {testing ? "Menguji Login..." : "Uji Login Monev"}
+                {testing ? "Menguji..." : "Uji Login"}
               </Button>
 
               <Button
@@ -176,7 +176,7 @@ export function MaganghubCredentialCard({
                 size="sm"
                 onClick={() => setIsEditing(true)}
                 disabled={testing || deleting}
-                className="gap-1.5 text-xs h-9 border-hairline text-ink-secondary hover:text-ink-primary"
+                className="flex-1 sm:flex-initial gap-1.5 text-xs h-9 sm:h-8 border-hairline text-ink-secondary hover:text-ink-primary"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
@@ -188,7 +188,7 @@ export function MaganghubCredentialCard({
                 size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={testing || deleting}
-                className="gap-1.5 text-xs h-9 border-hairline border-error/30 text-error hover:bg-error/10 hover:border-error"
+                className="flex-1 sm:flex-initial gap-1.5 text-xs h-9 sm:h-8 border-hairline border-error/30 text-error hover:bg-error/10 hover:border-error"
               >
                 {deleting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -56,8 +56,8 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-ink-primary">
-          Pengaturan & Konfigurasi Bot
+        <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">
+          Pengaturan &amp; Kredensial
         </h1>
         <p className="text-xs text-ink-secondary mt-1">
           Atur kredensial login Monev MagangHub, repository aktivitas, dan mode automasi

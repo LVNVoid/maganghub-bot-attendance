@@ -58,7 +58,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-ink-primary">
+        <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">
           Ringkasan &amp; Dashboard Bot
         </h1>
         <p className="text-xs text-ink-secondary mt-1">
@@ -67,26 +67,26 @@ export default async function DashboardPage() {
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Metric 1: Total Laporan */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Laporan Terkirim</span>
             <FileCheck className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-2xl font-semibold font-mono text-ink-primary">
+          <div className="text-xl sm:text-2xl font-semibold font-mono text-ink-primary">
             {totalSubmitted}
           </div>
-          <p className="text-[11px] text-ink-muted">Total hari absensi berhasil</p>
+          <p className="text-[10px] sm:text-[11px] text-ink-muted">Total hari absensi berhasil</p>
         </div>
 
         {/* Metric 2: Status Hari Ini */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Status Hari Ini</span>
             <Activity className="w-4 h-4 text-primary" />
           </div>
-          <div className="text-sm font-semibold text-ink-primary pt-1">
+          <div className="text-xs sm:text-sm font-semibold text-ink-primary pt-0.5 sm:pt-1 truncate">
             {todayReport?.status === "SUBMITTED" ? (
               <span className="text-primary">Terkirim</span>
             ) : todayReport?.status === "FAILED" ? (
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
               <span className="text-warning">Belum Dikirim</span>
             )}
           </div>
-          <p className="text-[11px] text-ink-muted font-mono">{todayStr}</p>
+          <p className="text-[10px] sm:text-[11px] text-ink-muted font-mono">{todayStr}</p>
         </div>
 
         {/* Metric 3: Kredensial */}

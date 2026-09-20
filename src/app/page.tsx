@@ -38,20 +38,20 @@ export default function Home() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <Link href="/docs" className="hidden sm:inline-flex">
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5">
+            <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8 sm:h-9">
               <BookOpen className="w-3.5 h-3.5" />
               <span>Dokumentasi</span>
             </Button>
           </Link>
           <Link href="/login">
-            <Button variant="outline" size="sm" className="text-xs">
+            <Button variant="outline" size="sm" className="text-xs h-8 sm:h-9">
               Masuk
             </Button>
           </Link>
           <Link href="/dashboard">
-            <Button variant="emerald" size="sm" className="text-xs gap-1.5">
+            <Button variant="emerald" size="sm" className="text-xs gap-1.5 h-8 sm:h-9">
               <span>Buka Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
@@ -60,37 +60,37 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-hairline">
+      <section className="relative pt-8 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-hairline">
         {/* Subtle radial glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary-soft blur-[120px] rounded-full pointer-events-none -z-10" />
 
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-soft border border-primary/25 text-primary text-xs font-mono tracking-wider uppercase">
+        <div className="max-w-4xl mx-auto text-center space-y-5 sm:space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-soft border border-primary/25 text-primary text-[11px] sm:text-xs font-mono tracking-wider uppercase">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Direct REST API • Zero Browser Overhead
+            Direct REST API &bull; Zero Browser Overhead
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-ink-primary leading-tight sm:leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-ink-primary leading-snug sm:leading-tight">
             Otomatisasi Laporan &amp; Presensi{" "}
             <span className="text-primary">MagangHub Kemnaker</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-ink-secondary max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-ink-secondary max-w-2xl mx-auto leading-relaxed">
             Kirim kehadiran harian dan susun laporan 3 bagian otomatis dari commit
             GitHub. Tanpa perlu browser Playwright/Chromium, aman terenkripsi AES-256-GCM.
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2">
             <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button variant="emerald" size="lg" className="w-full sm:w-auto gap-2 px-6">
+              <Button variant="emerald" size="lg" className="w-full sm:w-auto gap-2 px-6 h-10 sm:h-11 text-xs sm:text-sm">
                 <span>Mulai ke Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
 
             <Link href="/docs" className="w-full sm:w-auto">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto gap-2 px-6">
+              <Button variant="secondary" size="lg" className="w-full sm:w-auto gap-2 px-6 h-10 sm:h-11 text-xs sm:text-sm">
                 <BookOpen className="w-4 h-4 text-primary" />
                 <span>Pelajari Dokumentasi</span>
               </Button>
@@ -98,22 +98,22 @@ export default function Home() {
           </div>
 
           {/* Trust & Architecture Metrics */}
-          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left max-w-3xl mx-auto">
+          <div className="pt-6 sm:pt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-left max-w-3xl mx-auto">
             <div className="bg-canvas-subtle/80 border border-hairline p-3 rounded-md">
-              <div className="text-lg font-bold text-ink-primary font-mono">&lt; 1 Detik</div>
-              <div className="text-[11px] text-ink-muted">Latensi submit API</div>
+              <div className="text-base sm:text-lg font-bold text-ink-primary font-mono">&lt; 1 Detik</div>
+              <div className="text-[10px] sm:text-[11px] text-ink-muted">Latensi submit API</div>
             </div>
             <div className="bg-canvas-subtle/80 border border-hairline p-3 rounded-md">
-              <div className="text-lg font-bold text-primary font-mono">0 Token</div>
-              <div className="text-[11px] text-ink-muted">Fallback lokal gratis</div>
+              <div className="text-base sm:text-lg font-bold text-primary font-mono">0 Token</div>
+              <div className="text-[10px] sm:text-[11px] text-ink-muted">Fallback lokal gratis</div>
             </div>
             <div className="bg-canvas-subtle/80 border border-hairline p-3 rounded-md">
-              <div className="text-lg font-bold text-ink-primary font-mono">AES-256</div>
-              <div className="text-[11px] text-ink-muted">Enkripsi GCM kredensial</div>
+              <div className="text-base sm:text-lg font-bold text-ink-primary font-mono">AES-256</div>
+              <div className="text-[10px] sm:text-[11px] text-ink-muted">Enkripsi GCM kredensial</div>
             </div>
             <div className="bg-canvas-subtle/80 border border-hairline p-3 rounded-md">
-              <div className="text-lg font-bold text-ink-primary font-mono">Multi-User</div>
-              <div className="text-[11px] text-ink-muted">Webhook cron terpisah</div>
+              <div className="text-base sm:text-lg font-bold text-ink-primary font-mono">Multi-User</div>
+              <div className="text-[10px] sm:text-[11px] text-ink-muted">Webhook cron terpisah</div>
             </div>
           </div>
         </div>

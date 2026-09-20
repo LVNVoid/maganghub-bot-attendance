@@ -49,10 +49,10 @@ export function QuickSubmitCard({
   const isSubmitted = todayStatus === "SUBMITTED" || submittedSuccess;
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono uppercase text-primary font-semibold">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="space-y-1.5 sm:space-y-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <span className="text-[11px] sm:text-xs font-mono uppercase text-primary font-semibold">
             Status Hari Ini &bull; {todayDate}
           </span>
           {isSubmitted ? (
@@ -81,7 +81,7 @@ export function QuickSubmitCard({
             </span>
           )}
         </div>
-        <p className="text-xs text-ink-secondary">
+        <p className="text-xs text-ink-secondary leading-relaxed">
           {isSubmitted
             ? "Kehadiran dan laporan harian Anda untuk hari ini sudah tercatat di Monev Kemnaker."
             : "Tekan tombol di samping untuk auto-generate dan submit laporan harian langsung ke portal Monev."}
@@ -92,7 +92,7 @@ export function QuickSubmitCard({
         onClick={handleSubmit}
         disabled={loading || isSubmitted}
         variant="emerald"
-        className="gap-2 shrink-0 h-9 text-xs"
+        className="w-full md:w-auto gap-2 shrink-0 h-10 sm:h-9 text-xs font-semibold"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

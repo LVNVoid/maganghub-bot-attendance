@@ -58,9 +58,9 @@ ${cronExpression} ${curlCommand} >> /var/log/maganghub.log 2>&1`;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-mono text-ink-secondary">
-          <Terminal className="w-3.5 h-3.5 text-primary" />
+          <Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
           <span>Webhook Endpoint Token</span>
         </div>
         <Button
@@ -68,7 +68,7 @@ ${cronExpression} ${curlCommand} >> /var/log/maganghub.log 2>&1`;
           size="sm"
           onClick={() => setShowConfirm(true)}
           disabled={regenerating}
-          className="h-7 text-[11px] gap-1.5"
+          className="h-8 sm:h-7 text-[11px] gap-1.5 w-full sm:w-auto"
         >
           <RefreshCw className={`w-3 h-3 ${regenerating ? "animate-spin" : ""}`} />
           Regenerate Key

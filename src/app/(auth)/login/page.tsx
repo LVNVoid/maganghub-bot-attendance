@@ -41,11 +41,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-5 sm:space-y-6">
       <div className="space-y-1 text-center">
-        <h1 className="text-xl font-semibold text-ink-primary">Masuk ke Akun</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">Masuk ke Akun</h1>
         <p className="text-xs text-ink-secondary">
-          Kelola absensi & laporan MagangHub Anda
+          Kelola absensi &amp; laporan MagangHub Anda
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export default function LoginPage() {
 
       <Button
         variant="secondary"
-        className="w-full gap-2 border-hairline hover:border-hairline-prominent"
+        className="w-full gap-2 border-hairline hover:border-hairline-prominent h-10 sm:h-9 text-xs"
         onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
         type="button"
       >
@@ -81,6 +81,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
@@ -94,13 +95,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
         <Button
           type="submit"
           variant="emerald"
-          className="w-full"
+          className="w-full h-10 sm:h-9 text-xs font-semibold"
           disabled={loading}
         >
           {loading ? (

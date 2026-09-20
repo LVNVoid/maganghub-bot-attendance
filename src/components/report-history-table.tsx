@@ -105,7 +105,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   return (
     <div className="space-y-4">
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas-subtle border border-hairline rounded-md p-3.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-3.5">
         <div className="relative flex-1 max-w-md">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
           <Input
@@ -116,11 +116,11 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="pl-8 text-xs h-8"
+            className="pl-8 text-xs h-9 sm:h-8"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-start gap-2">
           <span className="text-xs text-ink-secondary shrink-0">Filter Status:</span>
           <select
             value={statusFilter}
@@ -128,7 +128,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="text-xs h-8 px-2.5 rounded-xs bg-canvas-deep border border-hairline text-ink-primary focus:outline-none focus:border-primary"
+            className="text-xs h-9 sm:h-8 px-2.5 rounded-xs bg-canvas-deep border border-hairline text-ink-primary focus:outline-none focus:border-primary flex-1 sm:flex-initial"
           >
             <option value="ALL">Semua Status</option>
             <option value="DRAFT">Draft</option>

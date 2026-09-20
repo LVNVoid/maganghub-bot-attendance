@@ -57,7 +57,7 @@ export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
   const startIndex = (currentPage - 1) * PAGE_SIZE;
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-5 space-y-4">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-5 space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <GitCommit className="w-4 h-4 text-primary" />

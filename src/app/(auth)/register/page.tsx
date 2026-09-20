@@ -43,9 +43,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-5 sm:space-y-6">
       <div className="space-y-1 text-center">
-        <h1 className="text-xl font-semibold text-ink-primary">Daftar Akun Baru</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">Daftar Akun Baru</h1>
         <p className="text-xs text-ink-secondary">
           Mulai otomatisasi laporan magang Anda
         </p>
@@ -65,6 +65,7 @@ export default function RegisterPage() {
             type="text"
             placeholder="John Doe"
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
@@ -75,6 +76,7 @@ export default function RegisterPage() {
             type="email"
             placeholder="nama@email.com"
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
@@ -85,6 +87,7 @@ export default function RegisterPage() {
             type="password"
             placeholder="Minimal 6 karakter"
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
@@ -95,13 +98,14 @@ export default function RegisterPage() {
             type="password"
             placeholder="Ketik ulang password"
             required
+            className="h-10 sm:h-9 text-base sm:text-xs"
           />
         </div>
 
         <Button
           type="submit"
           variant="emerald"
-          className="w-full"
+          className="w-full h-10 sm:h-9 text-xs font-semibold"
           disabled={loading}
         >
           {loading ? (

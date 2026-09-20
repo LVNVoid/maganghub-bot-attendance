@@ -24,7 +24,7 @@ export function SubmitLogsFeed({ logs }: SubmitLogsFeedProps) {
   }
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-4">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink-primary">
           Log Eksekusi Bot Terakhir

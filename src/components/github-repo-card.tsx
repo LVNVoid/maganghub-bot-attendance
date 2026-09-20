@@ -60,10 +60,10 @@ export function GithubRepoCard({ repos }: GithubRepoCardProps) {
   };
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-4 sm:space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <Github className="w-4 h-4" />
           </div>
           <div>
@@ -71,34 +71,35 @@ export function GithubRepoCard({ repos }: GithubRepoCardProps) {
               GitHub Repositories (Sumber Aktivitas)
             </h2>
             <p className="text-xs text-ink-secondary">
-              Commit history akan diekstrak otomatis sebagai dasar pembuatan laporan harian
+              Commit history diekstrak otomatis sebagai dasar laporan harian.
             </p>
           </div>
         </div>
       </div>
 
       {/* Add Repo Form */}
-      <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-3">
+      <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
         <div className="flex-1">
           <Input
             name="repo"
             placeholder="owner/nama-repo atau URL GitHub"
             required
+            className="text-xs h-9 sm:h-8"
           />
         </div>
-        <div className="w-full sm:w-36">
-          <Input name="branch" placeholder="main" defaultValue="main" />
+        <div className="w-full sm:w-32">
+          <Input name="branch" placeholder="main" defaultValue="main" className="text-xs h-9 sm:h-8" />
         </div>
         <Button
           type="submit"
           variant="secondary"
           disabled={loading}
-          className="gap-1.5 shrink-0"
+          className="gap-1.5 shrink-0 w-full sm:w-auto h-9 sm:h-8 text-xs"
         >
           {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
           )}
           Tambah Repo
         </Button>

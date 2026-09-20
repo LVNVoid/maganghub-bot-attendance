@@ -56,9 +56,9 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-ink-primary">
+          <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">
             Editor Laporan Harian
           </h1>
           <p className="text-xs text-ink-secondary mt-1">
@@ -66,8 +66,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           </p>
         </div>
 
-        <Link href="/reports/history">
-          <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+        <Link href="/reports/history" className="w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto gap-1.5 h-9 sm:h-8 text-xs">
             <History className="w-3.5 h-3.5" />
             <span>Kelola Riwayat Laporan</span>
             <ArrowRight className="w-3 h-3 ml-0.5" />

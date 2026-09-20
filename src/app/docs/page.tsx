@@ -61,11 +61,11 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
         <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold text-ink-primary">
+          <BookOpen className="w-5 h-5 text-primary shrink-0" />
+          <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">
             Dokumentasi &amp; Panduan Pengguna
           </h1>
         </div>
@@ -75,10 +75,10 @@ export default function DocsPage() {
       </div>
 
       {/* Main Container: Side-by-Side (Left Nav + Right Content) */}
-      <div className="flex flex-col md:flex-row items-start gap-8">
+      <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
         {/* Navigation Sidebar (Left) */}
         <aside className="w-full md:w-64 lg:w-72 shrink-0 md:sticky md:top-20 space-y-2">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-muted px-3 py-1 flex items-center justify-between">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-muted px-2 sm:px-3 py-1 flex items-center justify-between">
             <span>Daftar Materi</span>
             <span className="text-[10px] text-primary font-bold">8 Topik</span>
           </div>
@@ -111,7 +111,7 @@ export default function DocsPage() {
           </nav>
 
           {/* Mobile Horizontal Scrollable Tabs */}
-          <div className="flex md:hidden overflow-x-auto gap-2 pb-2 scrollbar-none">
+          <div className="flex md:hidden overflow-x-auto gap-2 pb-2 scrollbar-none -mx-1 px-1">
             {SECTIONS.map((sec) => {
               const Icon = sec.icon;
               const isActive = activeSection === sec.id;
@@ -135,7 +135,7 @@ export default function DocsPage() {
 
         {/* Content Area (Right) */}
         <div className="flex-1 min-w-0 w-full">
-          <div className="bg-canvas-subtle border border-hairline rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="bg-canvas-subtle border border-hairline rounded-lg p-4 sm:p-8 space-y-6">
             {/* Section 1: Quickstart */}
             {activeSection === "quickstart" && (
               <div className="space-y-6">

@@ -104,8 +104,8 @@ export function ReportForm({
     obstacles.trim().length >= 100;
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h2 className="text-sm font-semibold text-ink-primary">
             Editor Laporan Harian MagangHub
@@ -115,10 +115,10 @@ export function ReportForm({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           {aiConfig?.isReady ? (
             <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20 shrink-0"
               title={`Model AI Aktif: ${aiConfig.modelName}`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -126,7 +126,7 @@ export function ReportForm({
             </span>
           ) : (
             <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface text-ink-muted border border-hairline"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface text-ink-muted border border-hairline shrink-0"
               title="Kunci API pribadi belum diisi. Pembuatan laporan menggunakan generator cerdas lokal (0 token)."
             >
               <span className="w-1.5 h-1.5 rounded-full bg-warning" />
@@ -134,39 +134,41 @@ export function ReportForm({
             </span>
           )}
 
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => handleDateSelect(e.target.value)}
-            className="w-36 text-xs h-8"
-          />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => handleDateSelect(e.target.value)}
+              className="flex-1 sm:w-36 text-xs h-9 sm:h-8"
+            />
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleGenerateAI}
-            disabled={generating}
-            className="gap-1.5 h-8 text-xs border-primary/30 text-primary hover:bg-primary-soft"
-          >
-            {generating ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
-            {generating ? "Menganalisis..." : "Generate AI"}
-          </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleGenerateAI}
+              disabled={generating}
+              className="gap-1.5 h-9 sm:h-8 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0"
+            >
+              {generating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {generating ? "Menganalisis..." : "Generate AI"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-5">
+      <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
         {/* Section 1: Uraian Aktivitas */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="space-y-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <label className="text-xs font-medium text-ink-secondary">
               1. Uraian Aktivitas Pengerjaan (Hasil Kerja)
             </label>
-            {renderCharCounter(activity)}
+            <div>{renderCharCounter(activity)}</div>
           </div>
           <Textarea
             name="activity"
@@ -179,12 +181,12 @@ export function ReportForm({
         </div>
 
         {/* Section 2: Pembelajaran */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="space-y-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <label className="text-xs font-medium text-ink-secondary">
               2. Pembelajaran yang Diperoleh
             </label>
-            {renderCharCounter(learning)}
+            <div>{renderCharCounter(learning)}</div>
           </div>
           <Textarea
             name="learning"
@@ -197,12 +199,12 @@ export function ReportForm({
         </div>
 
         {/* Section 3: Kendala */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="space-y-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <label className="text-xs font-medium text-ink-secondary">
               3. Kendala yang Dihadapi &amp; Solusi
             </label>
-            {renderCharCounter(obstacles)}
+            <div>{renderCharCounter(obstacles)}</div>
           </div>
           <Textarea
             name="obstacles"
@@ -214,7 +216,7 @@ export function ReportForm({
           />
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-hairline">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-hairline">
           <div className="text-xs text-ink-muted">
             Status Validasi:{" "}
             {isFormValid ? (
@@ -228,7 +230,7 @@ export function ReportForm({
             type="submit"
             variant="secondary"
             disabled={saving}
-            className="gap-2 text-xs h-8"
+            className="w-full sm:w-auto gap-2 text-xs h-9 sm:h-8"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

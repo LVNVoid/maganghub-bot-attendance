@@ -58,9 +58,9 @@ export default async function AdminPage() {
   const successRate = totalLogs > 0 ? Math.round((successLogsCount / totalLogs) * 100) : 100;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-ink-primary">
+        <h1 className="text-lg sm:text-xl font-semibold text-ink-primary">
           Admin Panel &amp; Monitoring Peserta
         </h1>
         <p className="text-xs text-ink-secondary mt-1">
@@ -69,7 +69,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Aggregate Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Total Peserta</span>

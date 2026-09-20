@@ -138,12 +138,12 @@ export function AiConfigCard({
 
   return (
     <>
-      <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
-        <div className="flex items-start justify-between">
+      <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-primary" />
-              <h2 className="text-base font-semibold text-ink-primary">
+              <Cpu className="w-5 h-5 text-primary shrink-0" />
+              <h2 className="text-sm sm:text-base font-semibold text-ink-primary">
                 Model AI Pribadi (BYOK)
               </h2>
             </div>
@@ -168,18 +168,18 @@ export function AiConfigCard({
         </div>
 
         {hasConfig && !isEditing ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-surface border border-hairline rounded-xs text-xs">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 sm:p-4 bg-surface border border-hairline rounded-xs text-xs">
               <div>
-                <span className="text-ink-muted block">Provider / Base URL:</span>
+                <span className="text-ink-muted block text-[11px]">Provider / Base URL:</span>
                 <span className="font-mono text-ink-primary break-all">{baseUrl}</span>
               </div>
               <div>
-                <span className="text-ink-muted block">Nama Model:</span>
+                <span className="text-ink-muted block text-[11px]">Nama Model:</span>
                 <span className="font-mono text-ink-primary">{modelName}</span>
               </div>
               <div className="md:col-span-2">
-                <span className="text-ink-muted block">API Key:</span>
+                <span className="text-ink-muted block text-[11px]">API Key:</span>
                 <span className="font-mono text-ink-secondary">••••••••••••••••••••••••••••••••</span>
               </div>
             </div>
@@ -189,13 +189,13 @@ export function AiConfigCard({
               <span>Kunci API Anda tersimpan dalam bentuk ciphertext AES-256-GCM.</span>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="text-xs"
+                className="flex-1 sm:flex-initial text-xs h-9 sm:h-8"
               >
                 Ubah Konfigurasi
               </Button>
@@ -205,7 +205,7 @@ export function AiConfigCard({
                 size="sm"
                 onClick={handleTestConnection}
                 disabled={testing}
-                className="text-xs gap-1.5"
+                className="flex-1 sm:flex-initial text-xs gap-1.5 h-9 sm:h-8"
               >
                 {testing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -220,7 +220,7 @@ export function AiConfigCard({
                 size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting}
-                className="text-xs text-error hover:text-error hover:bg-error/10 gap-1.5 ml-auto"
+                className="w-full sm:w-auto text-xs text-error hover:text-error hover:bg-error/10 gap-1.5 sm:ml-auto h-9 sm:h-8"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Hapus Key

@@ -59,13 +59,13 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
   }
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-ink-primary">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h2 className="text-xs sm:text-sm font-semibold text-ink-primary">
             {monthNames[month]} {year}
           </h2>
-          <span className="text-xs text-ink-muted">
+          <span className="text-[11px] sm:text-xs text-ink-muted">
             Kalender Kehadiran &amp; Laporan
           </span>
         </div>
@@ -75,7 +75,8 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
             variant="outline"
             size="sm"
             onClick={prevMonth}
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 sm:h-7 sm:w-7 p-0"
+            aria-label="Bulan Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -83,7 +84,8 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
             variant="outline"
             size="sm"
             onClick={nextMonth}
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 sm:h-7 sm:w-7 p-0"
+            aria-label="Bulan Berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -91,7 +93,7 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-medium text-ink-muted">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] sm:text-[11px] font-medium text-ink-muted">
         <div>Min</div>
         <div>Sen</div>
         <div>Sel</div>
@@ -102,13 +104,13 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
       </div>
 
       {/* Days grid */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {days.map((d, index) => {
           if (!d) {
             return (
               <div
                 key={`empty-${index}`}
-                className="h-16 rounded-sm bg-transparent"
+                className="h-14 sm:h-16 rounded-xs sm:rounded-sm bg-transparent"
               />
             );
           }
@@ -121,7 +123,7 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
             <div
               key={d.dateString}
               onClick={() => onSelectDate && onSelectDate(d.dateString)}
-              className={`h-16 rounded-sm border p-1.5 flex flex-col justify-between transition-colors cursor-pointer ${
+              className={`h-14 sm:h-16 rounded-xs sm:rounded-sm border p-1 sm:p-1.5 flex flex-col justify-between transition-colors cursor-pointer ${
                 isSubmitted
                   ? "bg-primary-soft/30 border-primary/30 hover:border-primary"
                   : isDraft
@@ -131,7 +133,7 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
                   : "bg-canvas-deep border-hairline hover:border-hairline-prominent"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono">
                 <span
                   className={
                     isSubmitted
@@ -143,22 +145,22 @@ export function CalendarGrid({ reports, onSelectDate }: CalendarGridProps) {
                 </span>
 
                 {isSubmitted && (
-                  <CheckCircle2 className="w-3 h-3 text-primary" />
+                  <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary shrink-0" />
                 )}
                 {isDraft && (
-                  <Clock className="w-3 h-3 text-warning" />
+                  <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-warning shrink-0" />
                 )}
                 {isFailed && (
-                  <AlertCircle className="w-3 h-3 text-error" />
+                  <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-error shrink-0" />
                 )}
               </div>
 
               {d.report ? (
-                <div className="text-[10px] text-ink-muted truncate">
+                <div className="text-[9px] sm:text-[10px] text-ink-muted truncate">
                   {d.report.status}
                 </div>
               ) : (
-                <div className="text-[10px] text-ink-muted/50">-</div>
+                <div className="text-[9px] sm:text-[10px] text-ink-muted/50">-</div>
               )}
             </div>
           );

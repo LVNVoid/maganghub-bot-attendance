@@ -50,15 +50,15 @@ export function AutomationConfigCard({
   };
 
   return (
-    <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary shrink-0">
             <Cpu className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-ink-primary">
-              Metode Eksekusi & Automasi
+              Metode Eksekusi &amp; Automasi
             </h2>
             <p className="text-xs text-ink-secondary">
               Pilih mode submit manual 1-klik atau automasi cron VPS/Railway
@@ -66,22 +66,27 @@ export function AutomationConfigCard({
           </div>
         </div>
 
-        <button
-          onClick={handleToggle}
-          disabled={toggling}
-          type="button"
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-            isEnabled ? "bg-primary" : "bg-surface"
-          }`}
-          role="switch"
-          aria-checked={isEnabled}
-        >
-          <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-              isEnabled ? "translate-x-5" : "translate-x-0"
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0">
+          <span className="text-xs text-ink-secondary sm:hidden">
+            {isEnabled ? "Automasi Aktif" : "Automasi Nonaktif"}
+          </span>
+          <button
+            onClick={handleToggle}
+            disabled={toggling}
+            type="button"
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              isEnabled ? "bg-primary" : "bg-surface"
             }`}
-          />
-        </button>
+            role="switch"
+            aria-checked={isEnabled}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isEnabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
