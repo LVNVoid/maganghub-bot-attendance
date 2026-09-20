@@ -31,15 +31,30 @@ export class MagangHubApiClient {
     try {
       // Step 1: Inisiasi SSO login
       let ssoUrl = "";
+      let monevCookie = "";
       try {
         const initRes = await axios.get(`${MONEV_API_BASE}/auth/login`, {
           maxRedirects: 0,
           validateStatus: (status) => status >= 200 && status < 400,
           timeout: 10000,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
         });
+
+        // Extract monev cookies (especially monev_oauth_state)
+        const setCookie: unknown = initRes.headers["set-cookie"];
+        if (Array.isArray(setCookie)) {
+          monevCookie = setCookie.map((c) => String(c).split(";")[0]).join("; ");
+        } else if (typeof setCookie === "string") {
+          monevCookie = (setCookie as string).split(";")[0];
+        }
 
         if (initRes.status === 302 || initRes.status === 301) {
           ssoUrl = initRes.headers.location || "";
+        } else if (typeof initRes.data === "string" && initRes.data.startsWith("http")) {
+          ssoUrl = initRes.data.trim();
         } else if (initRes.data?.data?.url) {
           ssoUrl = initRes.data.data.url;
         } else if (initRes.data?.url) {
@@ -74,15 +89,12 @@ export class MagangHubApiClient {
         throw new Error("Gagal mengambil CSRF token dari halaman SSO Kemnaker.");
       }
 
-      const setCookieHeader: unknown = ssoPageRes.headers["set-cookie"];
+      const ssoSetCookie: unknown = ssoPageRes.headers["set-cookie"];
       let sessionCookie = "";
-      if (Array.isArray(setCookieHeader)) {
-        const found = setCookieHeader.find((c) => typeof c === "string" && c.startsWith("kemnaker_ri_session="));
-        if (typeof found === "string") {
-          sessionCookie = found.split(";")[0];
-        }
-      } else if (typeof setCookieHeader === "string") {
-        sessionCookie = setCookieHeader.split(";")[0];
+      if (Array.isArray(ssoSetCookie)) {
+        sessionCookie = ssoSetCookie.map((c) => String(c).split(";")[0]).join("; ");
+      } else if (typeof ssoSetCookie === "string") {
+        sessionCookie = (ssoSetCookie as string).split(";")[0];
       }
 
       // Step 3: Kirim kredensial ke endpoint login SSO
@@ -95,25 +107,60 @@ export class MagangHubApiClient {
             "Content-Type": "application/json",
             Accept: "application/json",
             "X-CSRF-TOKEN": csrfToken,
+            "X-Requested-With": "XMLHttpRequest",
             Cookie: sessionCookie,
+            Referer: ssoUrl,
+            Origin: "https://account.kemnaker.go.id",
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           },
           timeout: 12000,
+          validateStatus: (status) => status >= 200 && status < 500,
         }
       );
 
-      const redirectUri = loginRes.data?.redirect_uri || loginRes.data?.data?.redirect_uri;
+      if (loginRes.status >= 400) {
+        const errDetail =
+          loginRes.data?.errors?.username?.[0] ||
+          loginRes.data?.errors?.password?.[0] ||
+          loginRes.data?.message ||
+          "Email atau kata sandi akun Kemnaker tidak sesuai.";
+        throw new Error(`Login SSO Kemnaker gagal: ${errDetail}`);
+      }
+
+      const redirectUri =
+        loginRes.data?.data?.redirect_uri || loginRes.data?.redirect_uri;
       if (!redirectUri) {
         throw new Error(
-          loginRes.data?.message || "Login SSO Kemnaker gagal. Periksa kembali email dan password Anda."
+          loginRes.data?.message ||
+            "Login SSO Kemnaker berhasil namun redirect URI tidak ditemukan."
         );
       }
 
       // Step 4: Callback ke Monev API untuk tukar auth code dengan access token
-      const callbackRes = await axios.get(redirectUri, {
-        timeout: 10000,
-      });
+      const redirectUrlObj = new URL(redirectUri);
+      const code = redirectUrlObj.searchParams.get("code");
+      const state = redirectUrlObj.searchParams.get("state");
+
+      if (!code || !state) {
+        throw new Error(
+          `SSO callback tidak valid: code atau state tidak ditemukan pada ${redirectUri}`
+        );
+      }
+
+      const callbackRes = await axios.get(
+        `${MONEV_API_BASE}/auth/login/callback`,
+        {
+          params: { code, state },
+          headers: {
+            Cookie: monevCookie,
+            "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+          timeout: 10000,
+        }
+      );
 
       const tokenData = callbackRes.data?.data || callbackRes.data;
       const accessToken = tokenData?.access_token || tokenData?.token;
