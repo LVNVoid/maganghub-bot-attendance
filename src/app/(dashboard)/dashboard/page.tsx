@@ -5,7 +5,7 @@ import { QuickSubmitCard } from "@/components/quick-submit-card";
 import { CommitsPreview } from "@/components/commits-preview";
 import { SubmitLogsFeed } from "@/components/submit-logs-feed";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
-import { isSunday, getTodayJakartaStr } from "@/lib/date-utils";
+import { getTodayJakartaStr } from "@/lib/date-utils";
 import { FileCheck, Activity, KeyRound, Cpu } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -88,8 +88,6 @@ export default async function DashboardPage() {
               <span className="text-primary">Terkirim</span>
             ) : todayReport?.status === "FAILED" ? (
               <span className="text-error">Gagal</span>
-            ) : isSunday(todayStr) ? (
-              <span className="text-ink-secondary">Hari Libur (Minggu)</span>
             ) : (
               <span className="text-warning">Belum Dikirim</span>
             )}
@@ -139,7 +137,6 @@ export default async function DashboardPage() {
         todayStatus={todayReport?.status}
         hasCredential={!!credential}
         todayDate={todayStr}
-        isHoliday={isSunday(todayStr)}
       />
 
       {/* Grid: Commits Preview + Recent Logs */}

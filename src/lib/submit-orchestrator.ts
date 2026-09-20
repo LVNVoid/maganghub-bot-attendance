@@ -4,7 +4,7 @@ import { MagangHubApiClient } from "@/lib/maganghub-api";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { formatCommitsToActivitySummary } from "@/lib/activity-extractor";
 import { generateReportFromActivity } from "@/lib/ai";
-import { isSunday, getDayNameId, getTodayJakartaStr } from "@/lib/date-utils";
+import { getTodayJakartaStr } from "@/lib/date-utils";
 import { TriggerType } from "@prisma/client";
 
 export interface SubmitOrchestratorResult {
@@ -22,15 +22,7 @@ export async function executeUserDailySubmit(
   const dateStr = targetDateStr || getTodayJakartaStr();
   const dateObj = new Date(dateStr);
 
-  // 1. Pengecekan Hari Libur Magang (Hari Minggu)
-  if (isSunday(dateStr)) {
-    return {
-      success: false,
-      message: `Pengiriman laporan ditolak: Tanggal ${dateStr} adalah hari ${getDayNameId(dateStr)} (hari libur magang). Tidak ada kewajiban absensi atau pengiriman laporan harian pada hari libur.`,
-    };
-  }
-
-  // 2. Ambil kredensial MagangHub pengguna
+  // 1. Ambil kredensial MagangHub pengguna
   const cred = await db.maganghubCredential.findUnique({
     where: { userId },
   });

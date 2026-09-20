@@ -11,20 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  Trash2,
-  Edit3,
+  Search,
   CheckCircle2,
   Clock,
   AlertCircle,
-  Search,
+  Trash2,
+  Edit3,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
   Loader2,
-  CalendarOff,
 } from "lucide-react";
-import { isSunday } from "@/lib/date-utils";
 
 export type { ReportItem };
 
@@ -99,7 +97,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface text-ink-secondary border border-hairline">
             <Clock className="w-3 h-3 text-ink-muted" /> Draft
-            {isSunday(dateStr) && " (Libur)"}
           </span>
         );
     }
@@ -172,14 +169,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                       className="hover:bg-canvas-deep/50 transition-colors group"
                     >
                       <td className="py-3 px-4 font-mono font-medium text-ink-primary align-top">
-                        <div className="flex items-center gap-1.5">
-                          <span>{r.date}</span>
-                          {isSunday(r.date) && (
-                            <span title="Hari Minggu (Libur)">
-                              <CalendarOff className="w-3 h-3 text-warning shrink-0" />
-                            </span>
-                          )}
-                        </div>
+                        <span>{r.date}</span>
                       </td>
 
                       <td className="py-3 px-3 align-top">
