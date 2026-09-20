@@ -21,12 +21,18 @@ interface ReportFormProps {
   initialReport?: ReportData | null;
   selectedDate: string;
   onDateChange?: (date: string) => void;
+  aiConfig?: {
+    isReady: boolean;
+    modelName?: string;
+    provider?: string;
+  };
 }
 
 export function ReportForm({
   initialReport,
   selectedDate,
   onDateChange,
+  aiConfig,
 }: ReportFormProps) {
   const [date, setDate] = useState(initialReport?.date || selectedDate);
   const [activity, setActivity] = useState(initialReport?.activity || "");
@@ -109,12 +115,30 @@ export function ReportForm({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {aiConfig?.isReady ? (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20"
+              title={`Model AI Aktif: ${aiConfig.modelName}`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              AI Siap &bull; {aiConfig.modelName}
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface text-ink-muted border border-hairline"
+              title="Kunci API pribadi belum diisi. Pembuatan laporan menggunakan generator cerdas lokal (0 token)."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+              AI: Fallback 0-Token
+            </span>
+          )}
+
           <Input
             type="date"
             value={date}
             onChange={(e) => handleDateSelect(e.target.value)}
-            className="w-40 text-xs h-8"
+            className="w-36 text-xs h-8"
           />
 
           <Button

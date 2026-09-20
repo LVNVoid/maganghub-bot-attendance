@@ -6,7 +6,8 @@ import { CommitsPreview } from "@/components/commits-preview";
 import { SubmitLogsFeed } from "@/components/submit-logs-feed";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { getTodayJakartaStr } from "@/lib/date-utils";
-import { FileCheck, Activity, KeyRound, Cpu } from "lucide-react";
+import { getUserAiConfig } from "@/services/ai-config-service";
+import { FileCheck, Activity, KeyRound, Cpu, Sparkles } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -26,6 +27,7 @@ export default async function DashboardPage() {
     todayReport,
     commitsGroups,
     recentLogs,
+    aiConfig,
   ] = await Promise.all([
     db.maganghubCredential.findUnique({
       where: { userId },
@@ -50,6 +52,7 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
+    getUserAiConfig(userId),
   ]);
 
   return (
@@ -64,7 +67,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Metric 1: Total Laporan */}
         <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
@@ -113,7 +116,33 @@ export default async function DashboardPage() {
           <p className="text-[11px] text-ink-muted">Enkripsi AES-256-GCM</p>
         </div>
 
-        {/* Metric 4: Mode Automasi */}
+        {/* Metric 4: Status AI Generator */}
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+          <div className="flex items-center justify-between text-ink-secondary">
+            <span className="text-xs font-medium">Status Model AI</span>
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-sm font-semibold text-ink-primary pt-1 flex items-center gap-1.5">
+            {aiConfig ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                <span className="text-primary truncate" title={aiConfig.modelName}>
+                  Siap (BYOK)
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
+                <span className="text-warning truncate">Fallback (0-Token)</span>
+              </>
+            )}
+          </div>
+          <p className="text-[11px] text-ink-muted truncate">
+            {aiConfig ? aiConfig.modelName : "Local Synthesizer"}
+          </p>
+        </div>
+
+        {/* Metric 5: Mode Automasi */}
         <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Mode Eksekusi</span>
@@ -137,6 +166,8 @@ export default async function DashboardPage() {
         todayStatus={todayReport?.status}
         hasCredential={!!credential}
         todayDate={todayStr}
+        isAiReady={!!aiConfig}
+        aiModelName={aiConfig?.modelName}
       />
 
       {/* Grid: Commits Preview + Recent Logs */}

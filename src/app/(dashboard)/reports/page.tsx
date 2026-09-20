@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getReportByDate, getUserReports } from "@/services/report-service";
+import { getUserAiConfig } from "@/services/ai-config-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ReportForm } from "@/components/report-form";
@@ -21,10 +22,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const resolvedParams = await searchParams;
   const targetDateStr = resolvedParams.date || getTodayJakartaStr();
 
-  // Fetch report for target date and recent reports
-  const [targetReport, allReports] = await Promise.all([
+  // Fetch report for target date, recent reports, and user AI config in parallel
+  const [targetReport, allReports, userAi] = await Promise.all([
     getReportByDate(userId, targetDateStr),
     getUserReports(userId),
+    getUserAiConfig(userId),
   ]);
 
   const recentReports = allReports.slice(0, 5);
@@ -87,6 +89,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             : null
         }
         selectedDate={targetDateStr}
+        aiConfig={{
+          isReady: !!userAi,
+          modelName: userAi?.modelName,
+          provider: userAi?.provider,
+        }}
       />
 
       {/* History Preview Card */}

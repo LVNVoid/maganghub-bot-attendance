@@ -4,18 +4,22 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { submitReportAction } from "@/actions/report-actions";
-import { Send, CheckCircle2, AlertCircle, Loader2, CalendarOff } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle, Loader2, Sparkles, Cpu } from "lucide-react";
 
 interface QuickSubmitCardProps {
   todayStatus?: string | null;
   hasCredential: boolean;
   todayDate: string;
+  isAiReady?: boolean;
+  aiModelName?: string;
 }
 
 export function QuickSubmitCard({
   todayStatus,
   hasCredential,
   todayDate,
+  isAiReady = false,
+  aiModelName,
 }: QuickSubmitCardProps) {
   const [loading, setLoading] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
@@ -62,6 +66,18 @@ export function QuickSubmitCard({
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-warning/10 text-warning border border-warning/20">
               Menunggu Submit
+            </span>
+          )}
+
+          {isAiReady ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              AI: {aiModelName || "Ready"}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-surface text-ink-muted border border-hairline" title="Belum ada key AI pribadi, menggunakan smart fallback">
+              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+              AI: Fallback 0-Token
             </span>
           )}
         </div>
