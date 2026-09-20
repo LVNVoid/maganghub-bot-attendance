@@ -83,15 +83,16 @@ export async function executeUserDailySubmit(
           learning: generated.lesson_learned,
           obstacles: generated.obstacles,
           sourceType: "GITHUB",
-          sourceData: groups as any,
+          sourceData: groups as unknown as object,
           status: "DRAFT",
         },
       });
-    } catch (genErr: any) {
+    } catch (genErr) {
+      const msg = genErr instanceof Error ? genErr.message : "Error generating report";
       console.error("Auto generate report failed:", genErr);
       return {
         success: false,
-        message: `Gagal membuat draft laporan: ${genErr.message}`,
+        message: `Gagal membuat draft laporan: ${msg}`,
       };
     }
   }
@@ -132,7 +133,8 @@ export async function executeUserDailySubmit(
         lastCheckedAt: new Date(),
       },
     });
-  } catch (loginErr: any) {
+  } catch (loginErr) {
+    const loginErrMsg = loginErr instanceof Error ? loginErr.message : "Error login SSO";
     console.error("Monev SSO login failed:", loginErr);
 
     // Update status kredensial menjadi INVALID
@@ -149,7 +151,7 @@ export async function executeUserDailySubmit(
         userId,
         reportId: report.id,
         status: "FAILED",
-        message: `Login SSO Gagal: ${loginErr.message}`,
+        message: `Login SSO Gagal: ${loginErrMsg}`,
         triggeredBy,
         httpCode: 401,
       },
@@ -157,7 +159,7 @@ export async function executeUserDailySubmit(
 
     return {
       success: false,
-      message: `Login ke portal SSO Kemnaker gagal: ${loginErr.message}`,
+      message: `Login ke portal SSO Kemnaker gagal: ${loginErrMsg}`,
       reportId: report.id,
     };
   }

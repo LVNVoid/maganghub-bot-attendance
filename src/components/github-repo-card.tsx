@@ -8,7 +8,7 @@ import {
   addGithubRepo,
   deleteGithubRepo,
   toggleTrackRepo,
-} from "@/app/(dashboard)/settings/actions";
+} from "@/actions/settings-actions";
 import { Github, Plus, Trash2, GitBranch, Loader2, Check } from "lucide-react";
 
 export interface TrackedRepo {

@@ -17,7 +17,7 @@ export interface SubmitResult {
   success: boolean;
   httpCode: number;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 const MONEV_API_BASE = "https://monev-api.maganghub.kemnaker.go.id/api/v1";
@@ -60,8 +60,8 @@ export class MagangHubApiClient {
         } else if (initRes.data?.url) {
           ssoUrl = initRes.data.url;
         }
-      } catch (err: any) {
-        if (err.response?.status === 302 && err.response?.headers?.location) {
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
           ssoUrl = err.response.headers.location;
         } else {
           throw err;
@@ -189,8 +189,8 @@ export class MagangHubApiClient {
             callbackUrl =
               authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri || "";
           }
-        } catch (err: any) {
-          if (err.response?.status === 302 && err.response?.headers?.location) {
+        } catch (err) {
+          if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
             callbackUrl = err.response.headers.location;
           }
         }
@@ -238,9 +238,12 @@ export class MagangHubApiClient {
         accessToken,
         tokenType: tokenData?.token_type || "Bearer",
       };
-    } catch (error: any) {
-      if (error.response?.data?.message) {
-        throw new Error(`SSO Error: ${error.response.data.message}`);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data) {
+        const data = error.response.data as { message?: string };
+        if (data.message) {
+          throw new Error(`SSO Error: ${data.message}`);
+        }
       }
       throw error;
     }
@@ -281,18 +284,28 @@ export class MagangHubApiClient {
         message: response.data?.message || "Laporan harian berhasil disubmit ke Monev MagangHub!",
         data: response.data,
       };
-    } catch (error: any) {
-      const httpCode = error.response?.status || 500;
-      const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Gagal submit laporan ke portal Monev.";
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const httpCode = error.response?.status || 500;
+        const errorData = error.response?.data as { message?: string } | undefined;
+        const errorMsg =
+          errorData?.message ||
+          error.message ||
+          "Gagal submit laporan ke portal Monev.";
 
+        return {
+          success: false,
+          httpCode,
+          message: errorMsg,
+          data: error.response?.data,
+        };
+      }
+
+      const msg = error instanceof Error ? error.message : "Gagal submit laporan ke portal Monev.";
       return {
         success: false,
-        httpCode,
-        message: errorMsg,
-        data: error.response?.data,
+        httpCode: 500,
+        message: msg,
       };
     }
   }

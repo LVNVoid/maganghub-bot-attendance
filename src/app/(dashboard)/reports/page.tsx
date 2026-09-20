@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getReportByDate, getUserReports } from "@/services/report-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ReportForm } from "@/components/report-form";
@@ -21,20 +21,13 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const resolvedParams = await searchParams;
   const targetDateStr = resolvedParams.date || getTodayJakartaStr();
 
-  // Fetch report for target date
-  const targetReport = await db.report.findFirst({
-    where: {
-      userId,
-      date: new Date(targetDateStr),
-    },
-  });
+  // Fetch report for target date and recent reports
+  const [targetReport, allReports] = await Promise.all([
+    getReportByDate(userId, targetDateStr),
+    getUserReports(userId),
+  ]);
 
-  // Fetch recent reports summary (top 5)
-  const recentReports = await db.report.findMany({
-    where: { userId },
-    orderBy: { date: "desc" },
-    take: 5,
-  });
+  const recentReports = allReports.slice(0, 5);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -85,7 +78,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           targetReport
             ? {
                 id: targetReport.id,
-                date: targetReport.date.toISOString().split("T")[0],
+                date: targetReport.date,
                 activity: targetReport.activity,
                 learning: targetReport.learning,
                 obstacles: targetReport.obstacles,
@@ -127,14 +120,13 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                 <tr className="border-b border-hairline text-ink-muted">
                   <th className="py-2.5 px-3 font-medium">Tanggal</th>
                   <th className="py-2.5 px-3 font-medium">Status</th>
-                  <th className="py-2.5 px-3 font-medium">Sumber</th>
                   <th className="py-2.5 px-3 font-medium">Ringkasan Aktivitas</th>
                   <th className="py-2.5 px-3 font-medium text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">
                 {recentReports.map((r) => {
-                  const dateStr = r.date.toISOString().split("T")[0];
+                  const dateStr = r.date;
                   return (
                     <tr key={r.id} className="hover:bg-canvas-deep/50">
                       <td className="py-3 px-3 font-mono text-ink-primary whitespace-nowrap">
@@ -142,9 +134,6 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         {getStatusBadge(r.status)}
-                      </td>
-                      <td className="py-3 px-3 text-ink-muted font-mono text-[11px] whitespace-nowrap">
-                        {r.sourceType}
                       </td>
                       <td className="py-3 px-3 text-ink-secondary truncate max-w-md">
                         {r.activity.substring(0, 90)}...

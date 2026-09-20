@@ -33,6 +33,18 @@ export function isUsefulCommit(msg: string): boolean {
   return true;
 }
 
+interface GitHubApiCommitItem {
+  sha: string;
+  commit: {
+    message: string;
+    author?: {
+      name?: string;
+      date?: string;
+    };
+  };
+  html_url: string;
+}
+
 export async function fetchRepoCommits({
   owner,
   repo,
@@ -77,10 +89,10 @@ export async function fetchRepoCommits({
           timeout: 10000,
         }
       );
-    } catch (branchErr: any) {
+    } catch (branchErr) {
       // If branch not found (404), fetch default branch from repo info
-      if (branchErr.response?.status === 404) {
-        const repoInfo = await axios.get(
+      if (axios.isAxiosError(branchErr) && branchErr.response?.status === 404) {
+        const repoInfo = await axios.get<{ default_branch?: string }>(
           `https://api.github.com/repos/${owner}/${repo}`,
           { headers, timeout: 8000 }
         );
@@ -108,8 +120,7 @@ export async function fetchRepoCommits({
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawCommits = response.data.map((item: any) => ({
+    const rawCommits = (response.data as GitHubApiCommitItem[]).map((item) => ({
       sha: item.sha.substring(0, 7),
       message: cleanCommitMessage(item.commit.message),
       author: item.commit.author?.name || "Unknown",
@@ -119,16 +130,19 @@ export async function fetchRepoCommits({
 
     const commits = rawCommits.filter((c: GitHubCommit) => isUsefulCommit(c.message));
     return { commits, detectedBranch: activeBranch };
-  } catch (error: any) {
-    if (error.response?.status === 404) {
-      throw new Error(`Repository ${owner}/${repo} tidak ditemukan atau private.`);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        throw new Error(`Repository ${owner}/${repo} tidak ditemukan atau private.`);
+      }
+      if (error.response?.status === 401) {
+        throw new Error("Token GitHub tidak valid atau telah kadaluarsa.");
+      }
+      const dataMessage = (error.response?.data as { message?: string })?.message;
+      throw new Error(dataMessage || "Gagal mengambil commit dari GitHub API.");
     }
-    if (error.response?.status === 401) {
-      throw new Error("Token GitHub tidak valid atau telah kadaluarsa.");
-    }
-    throw new Error(
-      error.response?.data?.message || "Gagal mengambil commit dari GitHub API."
-    );
+    const msg = error instanceof Error ? error.message : "Gagal mengambil commit dari GitHub API.";
+    throw new Error(msg);
   }
 }
 

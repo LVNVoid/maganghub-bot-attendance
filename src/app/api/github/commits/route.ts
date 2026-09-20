@@ -15,10 +15,11 @@ export async function GET(request: Request) {
   try {
     const groups = await fetchAllTrackedCommitsForUser(session.user.id, date);
     return NextResponse.json({ date, groups });
-  } catch (error: any) {
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Gagal mengambil data commit";
     console.error("Fetch commits API error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal mengambil data commit" },
+      { error: msg },
       { status: 500 }
     );
   }

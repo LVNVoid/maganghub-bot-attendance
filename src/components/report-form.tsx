@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { generateReportDraft, saveReportDraft } from "@/app/(dashboard)/reports/actions";
+import { generateReportDraft, saveReportDraft } from "@/actions/report-actions";
 import { isSunday } from "@/lib/date-utils";
 import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2, CalendarOff } from "lucide-react";
 
@@ -45,13 +45,13 @@ export function ReportForm({
     setGenerating(true);
 
     const res = await generateReportDraft(date);
-    if (res?.error) {
-      toast.error(res.error);
-    } else if (res?.report) {
-      setActivity(res.report.activity);
-      setLearning(res.report.learning);
-      setObstacles(res.report.obstacles);
-      toast.success("Draft laporan berhasil di-generate!");
+    if (!res.success) {
+      toast.error(res.error.message);
+    } else if (res.data) {
+      setActivity(res.data.activity);
+      setLearning(res.data.learning);
+      setObstacles(res.data.obstacles);
+      toast.success(res.message || "Draft laporan berhasil di-generate!");
     }
     setGenerating(false);
   };
@@ -64,10 +64,10 @@ export function ReportForm({
     formData.set("date", date);
 
     const res = await saveReportDraft(formData);
-    if (res?.error) {
-      toast.error(res.error);
+    if (!res.success) {
+      toast.error(res.error.message);
     } else {
-      toast.success("Draft berhasil disimpan.");
+      toast.success(res.message || "Draft berhasil disimpan.");
     }
     setSaving(false);
   };

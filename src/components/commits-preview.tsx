@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { RepoCommitGroup, GitHubCommit } from "@/lib/github";
 import { GitCommit, GitBranch, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCommitsPagination } from "@/hooks/use-commits-pagination";
 
 interface CommitsPreviewProps {
   groups: RepoCommitGroup[];
@@ -15,23 +16,28 @@ interface FlattenedCommit extends GitHubCommit {
   branch: string;
 }
 
-const PAGE_SIZE = 5;
-
 export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-
   // Flatten and sort commits by date descending
-  const allCommits: FlattenedCommit[] = groups
-    .flatMap((group) =>
-      group.commits.map((c) => ({
-        ...c,
-        repoFullName: group.repoFullName,
-        branch: group.branch,
-      }))
-    )
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const allCommits: FlattenedCommit[] = useMemo(() => {
+    return groups
+      .flatMap((group) =>
+        group.commits.map((c) => ({
+          ...c,
+          repoFullName: group.repoFullName,
+          branch: group.branch,
+        }))
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [groups]);
 
   const totalCommits = allCommits.length;
+
+  const {
+    currentPage,
+    setCurrentPage,
+    paginatedItems: currentCommits,
+    totalPages,
+  } = useCommitsPagination(allCommits, 5);
 
   if (totalCommits === 0) {
     return (
@@ -47,10 +53,8 @@ export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
     );
   }
 
-  const totalPages = Math.ceil(totalCommits / PAGE_SIZE);
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (safePage - 1) * PAGE_SIZE;
-  const currentCommits = allCommits.slice(startIndex, startIndex + PAGE_SIZE);
+  const PAGE_SIZE = 5;
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
 
   return (
     <div className="bg-canvas-subtle border border-hairline rounded-md p-5 space-y-4">
@@ -114,21 +118,21 @@ export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
               variant="outline"
               size="sm"
               className="h-7 px-2 text-xs"
-              disabled={safePage === 1}
+              disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
               Prev
             </Button>
             <span className="text-[11px] font-mono text-ink-secondary px-1.5">
-              {safePage} / {totalPages}
+              {currentPage} / {totalPages}
             </span>
             <Button
               type="button"
               variant="outline"
               size="sm"
               className="h-7 px-2 text-xs"
-              disabled={safePage === totalPages}
+              disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
               Next

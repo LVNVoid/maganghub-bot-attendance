@@ -57,10 +57,11 @@ export async function POST(request: Request) {
       user: config.user.name || config.user.email,
       date: new Date().toISOString().split("T")[0],
     });
-  } catch (error: any) {
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Internal server error saat eksekusi cron.";
     console.error("Cron webhook error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error saat eksekusi cron." },
+      { error: msg },
       { status: 500 }
     );
   }

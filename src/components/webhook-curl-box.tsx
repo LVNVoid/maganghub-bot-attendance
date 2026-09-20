@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Copy, Check, RefreshCw, Terminal } from "lucide-react";
-import { regenerateWebhookKey } from "@/app/(dashboard)/settings/actions";
+import { regenerateWebhookKey } from "@/actions/settings-actions";
 
 interface WebhookCurlBoxProps {
   webhookKey: string;

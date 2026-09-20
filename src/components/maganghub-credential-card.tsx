@@ -9,7 +9,7 @@ import {
   saveMaganghubCredential,
   deleteMaganghubCredential,
   testMaganghubConnection,
-} from "@/app/(dashboard)/settings/actions";
+} from "@/actions/settings-actions";
 import {
   Eye,
   EyeOff,

@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getUserReports } from "@/services/report-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ReportHistoryTable, ReportItem } from "@/components/report-history-table";
+import { ReportHistoryTable } from "@/components/report-history-table";
 import { Button } from "@/components/ui/button";
 import { Plus, History } from "lucide-react";
 
@@ -12,24 +12,7 @@ export default async function ReportHistoryPage() {
     redirect("/login");
   }
 
-  const userId = session.user.id;
-
-  const rawReports = await db.report.findMany({
-    where: { userId },
-    orderBy: { date: "desc" },
-  });
-
-  const reports: ReportItem[] = rawReports.map((r) => ({
-    id: r.id,
-    date: r.date.toISOString().split("T")[0],
-    activity: r.activity,
-    learning: r.learning,
-    obstacles: r.obstacles,
-    sourceType: r.sourceType,
-    status: r.status,
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
-  }));
+  const reports = await getUserReports(session.user.id);
 
   return (
     <div className="space-y-6">

@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { deleteReportAction } from "@/app/(dashboard)/reports/actions";
+import { deleteReportAction } from "@/actions/report-actions";
+import { useReportHistory } from "@/hooks/use-report-history";
+import type { ReportItem } from "@/schemas/report-schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -24,59 +26,34 @@ import {
 } from "lucide-react";
 import { isSunday } from "@/lib/date-utils";
 
-export interface ReportItem {
-  id: string;
-  date: string;
-  activity: string;
-  learning: string;
-  obstacles: string;
-  sourceType: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { ReportItem };
 
 interface ReportHistoryTableProps {
-  reports: ReportItem[];
+  reports: readonly ReportItem[];
 }
-
-const PAGE_SIZE = 10;
 
 export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
 
-  // Filter logic
-  const filteredReports = reports.filter((r) => {
-    // Status filter
-    if (statusFilter !== "ALL" && r.status !== statusFilter) {
-      return false;
-    }
+  const PAGE_SIZE = 10;
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    currentPage,
+    setCurrentPage,
+    expandedId,
+    toggleExpand,
+    paginatedReports,
+    totalPages,
+    totalItems,
+  } = useReportHistory(reports, PAGE_SIZE);
 
-    // Search query filter (date or content)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchDate = r.date.toLowerCase().includes(q);
-      const matchActivity = r.activity.toLowerCase().includes(q);
-      const matchLearning = r.learning.toLowerCase().includes(q);
-      const matchObstacles = r.obstacles.toLowerCase().includes(q);
-      return matchDate || matchActivity || matchLearning || matchObstacles;
-    }
-
-    return true;
-  });
-
-  const totalItems = filteredReports.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (safePage - 1) * PAGE_SIZE;
-  const paginatedReports = filteredReports.slice(startIndex, startIndex + PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
 
   const confirmDelete = async () => {
     if (!reportToDelete) return;
@@ -102,10 +79,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
         router.refresh();
       }
     });
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const getStatusBadge = (status: string, dateStr: string) => {
@@ -334,21 +307,21 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                 variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
-                disabled={safePage === 1}
+                disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
                 <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
                 Prev
               </Button>
               <span className="text-[11px] font-mono text-ink-secondary px-1.5">
-                {safePage} / {totalPages}
+                {currentPage} / {totalPages}
               </span>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs"
-                disabled={safePage === totalPages}
+                disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               >
                 Next

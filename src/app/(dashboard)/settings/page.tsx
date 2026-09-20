@@ -1,6 +1,11 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
+import {
+  getUserMaganghubCredential,
+  getUserTrackedRepos,
+  getUserAutomationConfig,
+  updateAutomationConfig,
+} from "@/services/settings-service";
 import { MaganghubCredentialCard } from "@/components/maganghub-credential-card";
 import { GithubRepoCard } from "@/components/github-repo-card";
 import { AutomationConfigCard } from "@/components/automation-config-card";
@@ -14,29 +19,20 @@ export default async function SettingsPage() {
 
   const userId = session.user.id;
 
-  // Fetch credential, repos, and automation config in parallel
+  // Fetch credential, repos, and automation config in parallel via service layer
   const [credential, repos, automation] = await Promise.all([
-    db.maganghubCredential.findUnique({
-      where: { userId },
-    }),
-    db.githubRepo.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.automationConfig.findUnique({
-      where: { userId },
-    }),
+    getUserMaganghubCredential(userId),
+    getUserTrackedRepos(userId),
+    getUserAutomationConfig(userId),
   ]);
 
   // Ensure an automationConfig exists for the user
   let activeAutomation = automation;
   if (!activeAutomation) {
-    activeAutomation = await db.automationConfig.create({
-      data: {
-        userId,
-        isEnabled: false,
-        webhookKey: crypto.randomBytes(24).toString("hex"),
-      },
+    activeAutomation = await updateAutomationConfig(userId, {
+      isEnabled: false,
+      scheduleTime: "13:50",
+      webhookKey: crypto.randomBytes(24).toString("hex"),
     });
   }
 

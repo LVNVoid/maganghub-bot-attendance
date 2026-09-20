@@ -3,7 +3,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import { submitReportAction } from "@/app/(dashboard)/reports/actions";
+import { submitReportAction } from "@/actions/report-actions";
 import { Send, CheckCircle2, AlertCircle, Loader2, CalendarOff } from "lucide-react";
 
 interface QuickSubmitCardProps {

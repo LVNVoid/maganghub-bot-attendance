@@ -20,7 +20,7 @@ export default async function CalendarPage() {
 
   const formattedReports: CalendarDayReport[] = reports.map((r) => ({
     date: r.date.toISOString().split("T")[0],
-    status: r.status as any,
+    status: r.status as CalendarDayReport["status"],
     activity: r.activity,
   }));
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { WebhookCurlBox } from "@/components/webhook-curl-box";
-import { toggleAutomation, updateAutomationPreferences } from "@/app/(dashboard)/settings/actions";
+import { toggleAutomation, updateAutomationPreferences } from "@/actions/settings-actions";
 import { Cpu, Clock } from "lucide-react";
 
 interface AutomationConfigCardProps {
