@@ -1,17 +1,19 @@
 # MagangHub Bot Attendance
 
-Web app manajemen bot absensi dan auto-submit laporan harian magang ke portal Monev MagangHub Kemnaker (`https://monev.maganghub.kemnaker.go.id`) untuk multi-user peserta magang (posisi programmer/developer).
+Web application manajemen bot absensi dan auto-submit laporan harian magang ke portal Monev MagangHub Kemnaker (`https://monev.maganghub.kemnaker.go.id`) untuk multi-user peserta magang (posisi programmer/developer).
 
-Sistem mengintegrasikan ekstraksi commit history GitHub secara otomatis, sintesis laporan harian 3 bagian (minimal 100 karakter per bagian) berbasis AI, serta Direct REST API submission tanpa browser automation (zero Chromium/Playwright).
+Sistem mengintegrasikan ekstraksi riwayat commit GitHub otomatis, sintesis laporan harian 3 bagian berbasis AI via 9router (`combo-flash`), Direct REST API submission tanpa browser automation (zero Chromium/Playwright), dialog konfirmasi modal native React, dan feedback interaktif via `react-hot-toast`.
 
 ---
 
 ## ⚡ Fitur Utama
 
 - **Direct REST API Kemnaker (Zero Browser)**:
-  - Meniru alur autentikasi SSO Kemnaker (`account.kemnaker.go.id`) dan bertukar auth code dengan portal Monev MagangHub.
+  - Mengalirkan autentikasi SSO Kemnaker (`account.kemnaker.go.id`) dan menukar auth code dengan portal Monev MagangHub.
   - Submit kehadiran dan laporan harian langsung lewat HTTP POST (`/api/v1/attendances/with-daily-log`).
-  - Eksekusi instan (< 1 detik) tanpa beban memori browser, 100% kompatibel dengan serverless runtime (Vercel/Railway).
+  - Eksekusi instan (< 1 detik) tanpa beban memori browser, 100% kompatibel dengan serverless runtime.
+- **Respon Validasi Asli Portal (Native API Pass-through)**:
+  - Respon dan validasi dikembalikan apa adanya dari server Monev Kemnaker (seperti HTTP 409 `Presensi sudah ada`, HTTP 422, dsb.) dan dicatat ke log audit.
 - **Keamanan Kredensial Tingkat Tinggi**:
   - Email dan password akun MagangHub pengguna disimpan di database dengan enkripsi **AES-256-GCM** (`node:crypto`).
   - Password tidak pernah dikembalikan ke client dalam bentuk plaintext.
@@ -19,33 +21,35 @@ Sistem mengintegrasikan ekstraksi commit history GitHub secara otomatis, sintesi
   - **Mode Manual (Dashboard Web)**: Generate draft laporan dari commit GitHub dan tekan "Submit Kehadiran Sekarang" dengan 1-klik.
   - **Mode Automasi Terjadwal (Cron VPS / Railway Worker)**: Setiap user memiliki `webhookKey` unik. Web app menyediakan snippet perintah `curl` yang siap dipasang pada `crontab` VPS Linux pribadi atau scheduled task Railway/GitHub Actions.
 - **Integrasi GitHub Commits**:
-  - Hubungkan repository dan branch proyek yang sedang dikerjakan.
-  - Mengambil commit history harian secara otomatis sebagai bahan dasar laporan.
-- **AI Report Synthesizer (OpenAI / Groq + Fallback)**:
+  - Hubungkan repository dan branch proyek yang sedang dikerjakan. Auto-detect branch default (`master`/`main`).
+  - Mengambil commit history harian zona waktu WIB (`Asia/Jakarta`) secara otomatis sebagai bahan dasar laporan.
+- **AI Report Synthesizer (9router combo-flash + Contextual Parser)**:
   - Menghasilkan laporan dalam bahasa Indonesia semi-formal non-teknis (sesuai aturan Monev Kemnaker).
   - Terdiri dari 3 bagian: **Uraian Aktivitas**, **Pembelajaran yang Diperoleh**, dan **Kendala yang Dihadapi**.
-  - **Enforced Min-Length Check**: Setiap bagian dijamin memenuhi batas minimal validasi sistem MagangHub (≥ 100 karakter).
-  - Memiliki fallback generator deterministik jika API AI offline atau kehabisan kuota.
-- **Kalender & Monitoring Absensi**:
-  - Visualisasi kalender bulanan status absensi (Submitted, Draft, Gagal, Kosong).
-  - Feed log eksekusi bot audit trail (HTTP code, timestamp, trigger source).
-- **Admin Panel**:
-  - Monitoring kumulatif pengguna, success rate API, dan status kredensial peserta magang.
+  - Parser kontekstual menerjemahkan jenis commit (`feat`, `fix`, `refactor`, `docs`, `config`) ke kalimat bermakna tanpa awalan klise generik.
+- **Riwayat Laporan & Manajemen Draft (`/reports/history`)**:
+  - Tabel riwayat laporan lengkap dengan live search, filter status (`ALL`, `DRAFT`, `SUBMITTED`, `FAILED`), pagination 10 item, dan expandable accordion view.
+  - Fitur hapus draft laporan dengan konfirmasi modal `<ConfirmDialog>` dan proteksi penguncian untuk laporan berstatus `SUBMITTED`.
+- **UI & Feedback System (Supabase Dark Theme + react-hot-toast)**:
+  - Tema dark Supabase (`#171717` canvas, `#2e2e2e` border, `#3ecf8e` emerald).
+  - Notifikasi melayang non-intrusif via `react-hot-toast` (`ToasterProvider`), tanpa layout shift status banner statis inline.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Arsitektur
 
 | Layer | Teknologi |
 | :--- | :--- |
 | **Framework** | Next.js 16.3.5 (App Router, Turbopack, React 19) |
-| **Language** | TypeScript (Strict mode) |
+| **Language** | TypeScript (Strict mode, zero `any`) |
+| **Architecture** | Simple Scalable Architecture (`src/actions`, `src/services`, `src/schemas`, `src/hooks`, `src/types`, `src/utils`) |
 | **HTTP Client** | Axios |
 | **Database** | PostgreSQL di **Neon** (Serverless Postgres) |
-| **ORM** | Prisma ORM v6 |
-| **Authentication** | Auth.js v5 (`next-auth@beta`) + `@auth/prisma-adapter` + `bcryptjs` |
+| **ORM** | Prisma ORM v7.10.0 (`@prisma/adapter-pg` + `pg` driver adapter + `prisma.config.ts`) |
+| **Authentication** | Auth.js v5 (`next-auth@beta`) + `@auth/prisma-adapter` + `bcryptjs` (salt rounds 12) |
+| **Validation** | Zod v3.24 |
 | **Styling** | Tailwind CSS v4 (`@theme inline`), Lucide React |
-| **Design System** | Supabase dark-first theme (`#171717` canvas, `#3ecf8e` emerald accent) |
+| **Notifications** | `react-hot-toast` |
 | **Testing** | Vitest v3 |
 
 ---
@@ -55,15 +59,16 @@ Sistem mengintegrasikan ekstraksi commit history GitHub secara otomatis, sintesi
 Sebelum menjalankan proyek ini, pastikan Anda telah menyiapkan:
 
 1. **Node.js**: Versi `>= 20.0.0` (Direkomendasikan Node.js v22 LTS).
-2. **Database PostgreSQL**: Akun dan database di [Neon Serverless Postgres](https://neon.tech) (atau database PostgreSQL lokal/cloud lainnya).
+2. **Database PostgreSQL**: Akun dan database di [Neon Serverless Postgres](https://neon.tech) atau PostgreSQL lokal.
 3. **GitHub OAuth App**:
    - Buka GitHub Settings -> Developer settings -> OAuth Apps -> New OAuth App.
    - Homepage URL: `http://localhost:3000` (atau domain production Anda).
    - Authorization callback URL: `http://localhost:3000/api/auth/callback/github`.
 4. **Encryption Key**: 32-byte hex key (64 karakter hex) untuk enkripsi AES-256-GCM.
-5. **AI API Key (Opsional)**:
-   - OpenAI API Key (`OPENAI_API_KEY`) atau Groq API Key (`GROQ_API_KEY`).
-   - Jika dikosongkan, sistem tetap berjalan normal menggunakan engine fallback bawaan.
+5. **AI Gateway (9router)**:
+   - Endpoint: `http://43.157.204.138:20128/v1`
+   - Model: `combo-flash`
+   - API Key: `OPENAI_API_KEY`
 
 ---
 
@@ -79,7 +84,7 @@ Isi variabel lingkungan berikut:
 
 ```env
 # 1. Database PostgreSQL di Neon
-DATABASE_URL="postgresql://<user>:<password>@<ep-hostname>.neon.tech/<dbname>?sslmode=require"
+DATABASE_URL="postgresql://<user>:<password>@<host>.neon.tech/<dbname>?sslmode=require"
 
 # 2. NextAuth v5 Configuration
 NEXTAUTH_URL="http://localhost:3000"
@@ -90,12 +95,13 @@ GITHUB_CLIENT_ID="your_github_oauth_client_id"
 GITHUB_CLIENT_SECRET="your_github_oauth_client_secret"
 
 # 4. Security / Enkripsi Kredensial MagangHub (Wajib 64 karakter hex / 32 byte)
-# Contoh generate di bash/terminal: node -e "console.log(crypto.randomBytes(32).toString('hex'))"
+# Generate via node: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
-# 5. AI Provider (Opsional, pilih salah satu atau keduanya)
-OPENAI_API_KEY=""
-GROQ_API_KEY=""
+# 5. AI Provider (9router Gateway)
+OPENAI_BASE_URL="http://43.157.204.138:20128/v1"
+OPENAI_MODEL="combo-flash"
+OPENAI_API_KEY="your_9router_api_key"
 ```
 
 ---
@@ -107,17 +113,17 @@ GROQ_API_KEY=""
 npm install
 ```
 
-### 2. Push Schema ke Database Neon
-Pastikan `DATABASE_URL` pada `.env` sudah mengarah ke database Neon Anda, lalu jalankan:
+### 2. Validasi & Generate Prisma 7
+```bash
+npx prisma validate
+npx prisma generate
+```
+
+### 3. Push Schema ke Database
 ```bash
 npx prisma db push
 ```
-Perintah ini akan membuat seluruh tabel yang dibutuhkan (`User`, `Account`, `MaganghubCredential`, `GithubRepo`, `Report`, `SubmitLog`, `AutomationConfig`).
-
-### 3. Generate Prisma Client
-```bash
-npx prisma generate
-```
+Perintah ini akan membuat dan menyinkronkan tabel (`User`, `Account`, `Session`, `MaganghubCredential`, `GithubRepo`, `Report`, `SubmitLog`, `AutomationConfig`) beserta indeks database.
 
 ### 4. Jalankan Development Server
 ```bash
@@ -133,52 +139,62 @@ npm run start
 
 ---
 
-## 📖 Panduan Penggunaan
+## 📖 Panduan Penggunaan Lengkap
 
-### 1. Registrasi Akun
+### 1. Registrasi Akun Web App
 1. Buka `http://localhost:3000/register`.
-2. Masukkan Nama, Email, dan Password.
+2. Masukkan Nama Lengkap, Email, dan Password (minimal 8 karakter).
 3. Atau klik tombol **Masuk dengan GitHub** di halaman Login.
 
-### 2. Konfigurasi Kredensial MagangHub
-1. Masuk ke menu **Pengaturan & Bot** (`/settings`).
-2. Pada bagian **Kredensial MagangHub (SSO Kemnaker)**, masukkan email dan password akun Kemnaker yang Anda gunakan untuk login ke portal Monev MagangHub.
-3. Klik **Simpan Kredensial**. Password Anda akan langsung dienkripsi menggunakan AES-256-GCM sebelum masuk ke database.
+### 2. Konfigurasi Kredensial MagangHub (SSO Kemnaker)
+1. Buka menu **Pengaturan & Bot** (`/settings`).
+2. Pada card **Kredensial MagangHub (SSO Kemnaker)**, masukkan email dan kata sandi akun Kemnaker (`account.kemnaker.go.id`).
+3. Klik **Simpan Kredensial**. Password langsung dienkripsi menggunakan AES-256-GCM sebelum disimpan ke database.
+4. Klik tombol **Uji Login Monev** untuk memastikan akun Kemnaker valid dan dapat berkomunikasi dengan portal Monev.
 
 ### 3. Hubungkan Repository GitHub
-1. Pada menu **Pengaturan & Bot** -> bagian **GitHub Repositories**.
-2. Masukkan nama repository yang sedang Anda kerjakan dengan format `owner/repo` (contoh: `facebook/react` atau URL GitHub) dan tentukan nama branch (default: `main`).
-3. Klik **Tambah Repo**. Anda dapat menghubungkan lebih dari satu repository.
+1. Pada menu **Pengaturan & Bot** -> card **GitHub Repositories**.
+2. Masukkan nama repository yang sedang dikerjakan dengan format `owner/repo` (contoh: `LVNVoid/lvn` atau URL GitHub) dan tentukan branch (default: `main` / auto-detect).
+3. Klik **Tambah Repo**. Anda dapat menambahkan lebih dari satu repository.
 
-### 4. Pilihan Mode Automasi:
+### 4. Pilihan Mode Eksekusi:
 
-#### Opsi A: Manual Submit (Tanpa Server Tambahan)
+#### Opsi A: Manual Submit (1-Klik di Web)
 1. Buka menu **Laporan Harian** (`/reports`).
-2. Klik tombol **Generate AI** untuk merangkum commit hari ini menjadi draf laporan 3 bagian.
-3. Anda dapat mengedit isi uraian, pembelajaran, dan kendala (tersedia live counter memastikan masing-masing ≥ 100 karakter).
-4. Klik **Simpan Draft** atau buka **Dashboard** lalu tekan tombol **Submit Kehadiran Sekarang**.
+2. Klik tombol **Generate AI** untuk merangkum commit GitHub hari ini menjadi draf laporan 3 bagian (Aktivitas, Pembelajaran, Kendala).
+3. Edit isi uraian jika diperlukan (tersedia counter jumlah karakter).
+4. Klik **Simpan Draft** atau buka **Dashboard** lalu tekan **Submit Kehadiran Sekarang**.
 
-#### Opsi B: Automasi Terjadwal (Cron VPS / Railway)
-1. Buka menu **Pengaturan & Bot** -> bagian **Metode Eksekusi & Automasi**.
+#### Opsi B: Automasi Terjadwal (Cron VPS / Cloud Worker)
+1. Buka menu **Pengaturan & Bot** -> card **Metode Eksekusi & Automasi**.
 2. Nyalakan switch toggle **Automasi Terjadwal**.
 3. Tentukan jam target submit (contoh: `13:50` WIB).
-4. Salin perintah `curl` atau konfigurasi `crontab` yang tertera pada kotak **Webhook Endpoint Token**:
+4. Salin curl command pada kotak **Webhook Endpoint Token**:
    ```bash
-   # Contoh crontab di VPS Linux (crontab -e)
+   # Pasang di crontab VPS Linux (crontab -e)
    50 13 * * 1-6 curl -s -X POST https://domain-anda.com/api/cron/trigger \
-     -H "Authorization: Bearer <TOKEN_WEBHOOK_ANDA>" >> /var/log/maganghub.log 2>&1
+     -H "Authorization: Bearer <WEBHOOK_KEY>" >> /var/log/maganghub-cron.log 2>&1
    ```
-5. Bot di VPS akan memanggil endpoint web app setiap Senin-Sabtu jam 13:50 WIB. Web app akan otomatis mengambil commit, menghasilkan laporan, login ke SSO Kemnaker, dan mengirimkan absensi.
+5. Saat cron berjalan:
+   - Jika belum ada draf, sistem otomatis menarik commit GitHub hari itu, men-generate laporan via AI, menyimpan draf, login SSO Kemnaker, dan submit ke Monev.
+   - Jika sudah ada draf, sistem mengirimkan draf yang ada.
+   - Respon asli dari portal Monev (HTTP 200, 409, 422, dsb.) dicatat ke tabel log audit.
+
+### 5. Melihat Riwayat & Menghapus Draft (`/reports/history`)
+1. Buka menu **Riwayat Laporan** di sidebar.
+2. Gunakan kolom pencarian dan filter status (`ALL`, `DRAFT`, `SUBMITTED`, `FAILED`) untuk menemukan laporan.
+3. Klik baris laporan untuk melihat detail ekspansif 3 bagian laporan.
+4. Klik ikon tong sampah (**Hapus**) pada laporan berstatus `DRAFT` atau `FAILED` untuk menghapus. Konfirmasi modal `<ConfirmDialog>` akan muncul sebelum penghapusan diproses. Laporan berstatus `SUBMITTED` terkunci permanen dan tidak dapat dihapus.
 
 ---
 
 ## 📡 API Endpoints
 
-| Method | Endpoint | Deskripsi | Autentikasi |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/cron/trigger` | Trigger eksekusi harian untuk user pemilik webhook | Header `Authorization: Bearer <webhookKey>` |
-| `GET` | `/api/github/commits` | Ambil daftar commit hari ini dari tracked repos | Session Cookie (Auth.js) |
-| `GET/POST` | `/api/auth/[...nextauth]` | Endpoint autentikasi Auth.js v5 | Public / OAuth Callback |
+| Method | Endpoint | Deskripsi | Autentikasi | Rate Limit |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/cron/trigger` | Memicu eksekusi submit harian untuk user pemilik webhook | Header `Authorization: Bearer <key>` | 10 req/menit per IP |
+| `GET` | `/api/github/commits` | Ambil daftar commit hari ini dari repository yang dilacak | Session Cookie (Auth.js) | - |
+| `GET/POST` | `/api/auth/[...nextauth]` | Endpoint autentikasi Auth.js v5 | Public / OAuth Callback | - |
 
 ---
 
@@ -193,19 +209,21 @@ npm test
 # Typecheck TypeScript
 npm run typecheck
 
-# Production Build check
+# Production Build check (Next.js Turbopack)
 npm run build
 ```
 
-Cakupan pengujian:
+Cakupan pengujian (20 tests passed):
 - `src/lib/crypto.test.ts`: Validasi enkripsi/dekripsi AES-256-GCM, IV unik, dan anti-tamper.
 - `src/lib/ai.test.ts`: Validasi sintesis teks dan enforcement minimal 100 karakter per bagian.
-- `src/lib/github.test.ts`: Validasi pembersihan commit message dan filter merge commit.
-- `src/lib/activity-extractor.test.ts`: Validasi pengelompokan aktivitas developer.
-- `src/lib/maganghub-api.test.ts`: Validasi struktur client HTTP dan error handling.
+- `src/lib/github.test.ts`: Validasi pembersihan commit message, auto-detect branch, dan filter merge commit.
+- `src/lib/activity-extractor.test.ts`: Validasi ekstraksi aktivitas developer.
+- `src/lib/maganghub-api.test.ts`: Validasi penanganan error API Monev.
+- `src/lib/date-utils.test.ts`: Validasi utilitas tanggal zona waktu WIB.
+- `src/lib/submit-orchestrator.test.ts`: Validasi modul orchestrator.
 
 ---
 
-## 🔒 Lisensi & Privasi
+## 🔒 Lisensi & Keamanan
 
-Proyek ini dibangun untuk kebutuhan internal peserta magang programmer Kemnaker. Kredensial SSO Kemnaker pengguna dienkripsi secara simetris dan tidak pernah dibagikan kepada pihak ketiga.
+Dibangun untuk kebutuhan peserta magang programmer Kemnaker RI. Kredensial SSO Kemnaker dienkripsi secara simetris (AES-256-GCM) dan tidak pernah dibagikan kepada pihak ketiga.
