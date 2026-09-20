@@ -24,40 +24,19 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-canvas text-ink-primary selection:bg-primary/20 selection:text-primary">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 h-14 border-b border-hairline bg-canvas/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-ink-primary">
-                MagangHub Bot
-              </span>
-              <span className="text-[10px] font-mono text-ink-muted leading-none">
-                Attendance &amp; Reports
-              </span>
-            </div>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-5 text-xs font-medium text-ink-secondary">
-            <a href="#fitur" className="hover:text-ink-primary transition-colors py-1">
-              Fitur
-            </a>
-            <a href="#alur" className="hover:text-ink-primary transition-colors py-1">
-              Cara Kerja
-            </a>
-            <a href="#panduan" className="hover:text-ink-primary transition-colors py-1">
-              Panduan Cepat
-            </a>
-            <Link
-              href="/docs"
-              className="text-primary hover:text-primary-hover font-medium flex items-center gap-1.5 py-1"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Dokumentasi</span>
-            </Link>
-          </nav>
-        </div>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+            <Bot className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold tracking-tight text-ink-primary">
+              MagangHub Bot
+            </span>
+            <span className="text-[10px] font-mono text-ink-muted leading-none">
+              Attendance &amp; Reports
+            </span>
+          </div>
+        </Link>
 
         <div className="flex items-center gap-2.5 sm:gap-3">
           <Link href="/docs" className="hidden sm:inline-flex">

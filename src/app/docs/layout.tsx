@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, ArrowRight, BookOpen } from "lucide-react";
+import { Bot, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
@@ -17,43 +17,19 @@ export default function DocsLayout({
     <div className="min-h-screen flex flex-col bg-canvas text-ink-primary">
       {/* Public Header */}
       <header className="sticky top-0 z-40 h-14 border-b border-hairline bg-canvas/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-ink-primary">
-                MagangHub Bot
-              </span>
-              <span className="text-[10px] font-mono text-ink-muted leading-none">
-                Attendance &amp; Reports
-              </span>
-            </div>
-          </Link>
-
-          <nav className="hidden sm:flex items-center gap-4 text-xs font-medium text-ink-secondary">
-            <Link
-              href="/"
-              className="hover:text-ink-primary transition-colors py-1"
-            >
-              Beranda
-            </Link>
-            <Link
-              href="/#fitur"
-              className="hover:text-ink-primary transition-colors py-1"
-            >
-              Fitur
-            </Link>
-            <Link
-              href="/docs"
-              className="text-primary font-semibold py-1 flex items-center gap-1.5"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Dokumentasi
-            </Link>
-          </nav>
-        </div>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-sm bg-primary-soft border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+            <Bot className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold tracking-tight text-ink-primary">
+              MagangHub Bot
+            </span>
+            <span className="text-[10px] font-mono text-ink-muted leading-none">
+              Attendance &amp; Reports
+            </span>
+          </div>
+        </Link>
 
         <div className="flex items-center gap-3">
           <Link href="/dashboard">
