@@ -1,4 +1,5 @@
 import axios from "axios";
+import { HttpsProxyAgent } from "https-proxy-agent";
 
 export interface MonevAuthToken {
   accessToken: string;
@@ -94,16 +95,30 @@ function formatStepError(stepName: string, error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
+function getHttpClient() {
+  const proxyUrl = process.env.MAGANGHUB_PROXY_URL;
+  if (proxyUrl) {
+    const agent = new HttpsProxyAgent(proxyUrl);
+    return axios.create({
+      httpsAgent: agent,
+      proxy: false,
+    });
+  }
+  return axios.create();
+}
+
 export class MagangHubApiClient {
   /**
    * Login ke Monev MagangHub via SSO Kemnaker Direct REST API
    */
   static async login(username: string, password: string): Promise<MonevAuthToken> {
+    const http = getHttpClient();
+
     // Step 1: Inisiasi SSO login
     let ssoUrl = "";
     let monevCookie = "";
     try {
-      const initRes = await axios.get(`${MONEV_API_BASE}/auth/login`, {
+      const initRes = await http.get(`${MONEV_API_BASE}/auth/login`, {
         maxRedirects: 0,
         validateStatus: (status) => status >= 200 && status < 400,
         timeout: 10000,
@@ -149,7 +164,7 @@ export class MagangHubApiClient {
 
       // Ikuti redirect manual agar Set-Cookie 302 tidak hilang
       for (let redirectCount = 0; redirectCount < 3; redirectCount++) {
-        const res = await axios.get(currentUrl, {
+        const res = await http.get(currentUrl, {
           maxRedirects: 0,
           validateStatus: (status) => status >= 200 && status < 400,
           timeout: 10000,
@@ -189,7 +204,7 @@ export class MagangHubApiClient {
     let redirectUri = "";
     try {
       const loginPayload = { username, password };
-      const loginRes = await axios.post(
+      const loginRes = await http.post(
         "https://account.kemnaker.go.id/auth/login",
         loginPayload,
         {
@@ -233,7 +248,7 @@ export class MagangHubApiClient {
       callbackUrl = redirectUri;
     } else {
       try {
-        const ssoAuthRes = await axios.get(ssoUrl, {
+        const ssoAuthRes = await http.get(ssoUrl, {
           headers: {
             ...BROWSER_HEADERS,
             Cookie: sessionCookie,
@@ -253,7 +268,7 @@ export class MagangHubApiClient {
           typeof ssoAuthRes.data === "string" &&
           ssoAuthRes.data.includes("auth-authorize")
         ) {
-          const authRes = await axios.post(
+          const authRes = await http.post(
             "https://account.kemnaker.go.id/auth",
             {},
             {
@@ -305,7 +320,7 @@ export class MagangHubApiClient {
         );
       }
 
-      const callbackRes = await axios.get(
+      const callbackRes = await http.get(
         `${MONEV_API_BASE}/auth/login/callback`,
         {
           params: { code, state },
@@ -343,6 +358,7 @@ export class MagangHubApiClient {
     token: string,
     payload: SubmitPayload
   ): Promise<SubmitResult> {
+    const http = getHttpClient();
     try {
       const body = {
         date: payload.date,
@@ -352,7 +368,7 @@ export class MagangHubApiClient {
         obstacles: payload.obstacles,
       };
 
-      const response = await axios.post(
+      const response = await http.post(
         `${MONEV_API_BASE}/attendances/with-daily-log`,
         body,
         {
