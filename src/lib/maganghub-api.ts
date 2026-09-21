@@ -24,9 +24,20 @@ const MONEV_API_BASE = "https://monev-api.maganghub.kemnaker.go.id/api/v1";
 const FRONTEND_BUILD_ID = "5554ff014eccd220f80524df263ae513d8ce1e25-production";
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const COMMON_BROWSER_HEADERS = {
+const BROWSER_HEADERS = {
   "User-Agent": DEFAULT_USER_AGENT,
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
   "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+  "sec-ch-ua":
+    '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": '"Windows"',
+  "sec-fetch-dest": "document",
+  "sec-fetch-mode": "navigate",
+  "sec-fetch-site": "cross-site",
+  "sec-fetch-user": "?1",
+  "upgrade-insecure-requests": "1",
 };
 
 function mergeCookies(currentCookie: string, setCookieHeader: unknown): string {
@@ -95,7 +106,7 @@ export class MagangHubApiClient {
         validateStatus: (status) => status >= 200 && status < 400,
         timeout: 10000,
         headers: {
-          ...COMMON_BROWSER_HEADERS,
+          ...BROWSER_HEADERS,
           "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
           Referer: "https://monev.maganghub.kemnaker.go.id/",
           Origin: "https://monev.maganghub.kemnaker.go.id",
@@ -130,25 +141,44 @@ export class MagangHubApiClient {
     let csrfToken: string | null = null;
     let sessionCookie = "";
     try {
-      const ssoPageRes = await axios.get(ssoUrl, {
-        headers: {
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-          Referer: "https://monev.maganghub.kemnaker.go.id/",
-          ...COMMON_BROWSER_HEADERS,
-        },
-        timeout: 10000,
-      });
+      let ssoPageHtml = "";
+      let currentUrl = ssoUrl;
+      let referer = "https://monev.maganghub.kemnaker.go.id/";
 
-      const html = ssoPageRes.data || "";
-      const csrfMatch = html.match(/<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i);
+      // Ikuti redirect manual agar Set-Cookie 302 tidak hilang
+      for (let redirectCount = 0; redirectCount < 3; redirectCount++) {
+        const res = await axios.get(currentUrl, {
+          maxRedirects: 0,
+          validateStatus: (status) => status >= 200 && status < 400,
+          timeout: 10000,
+          headers: {
+            ...BROWSER_HEADERS,
+            Referer: referer,
+            Cookie: sessionCookie,
+          },
+        });
+
+        sessionCookie = mergeCookies(sessionCookie, res.headers["set-cookie"]);
+
+        if (res.status === 302 || res.status === 301) {
+          referer = currentUrl;
+          const location = res.headers.location;
+          if (!location) break;
+          currentUrl = location.startsWith("http")
+            ? location
+            : new URL(location, currentUrl).toString();
+        } else {
+          ssoPageHtml = typeof res.data === "string" ? res.data : "";
+          break;
+        }
+      }
+
+      const csrfMatch = ssoPageHtml.match(/<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i);
       csrfToken = csrfMatch ? csrfMatch[1] : null;
 
       if (!csrfToken) {
         throw new Error("[Step 2 - Halaman SSO Kemnaker] CSRF token tidak ditemukan pada respons.");
       }
-
-      sessionCookie = mergeCookies("", ssoPageRes.headers["set-cookie"]);
     } catch (err) {
       throw formatStepError("Step 2 - Halaman SSO Kemnaker", err);
     }
@@ -162,14 +192,17 @@ export class MagangHubApiClient {
         loginPayload,
         {
           headers: {
+            ...BROWSER_HEADERS,
             "Content-Type": "application/json",
             Accept: "application/json",
             "X-CSRF-TOKEN": csrfToken,
             "X-Requested-With": "XMLHttpRequest",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
             Cookie: sessionCookie,
-            Referer: ssoUrl,
+            Referer: "https://account.kemnaker.go.id/auth/login",
             Origin: "https://account.kemnaker.go.id",
-            ...COMMON_BROWSER_HEADERS,
           },
           timeout: 12000,
           validateStatus: (status) => status >= 200 && status < 500,
@@ -200,12 +233,10 @@ export class MagangHubApiClient {
       try {
         const ssoAuthRes = await axios.get(ssoUrl, {
           headers: {
-            Accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            ...BROWSER_HEADERS,
             Cookie: sessionCookie,
             Referer: "https://account.kemnaker.go.id/auth/login",
             Origin: "https://account.kemnaker.go.id",
-            ...COMMON_BROWSER_HEADERS,
           },
           maxRedirects: 0,
           validateStatus: (status) => status >= 200 && status < 400,
@@ -225,14 +256,17 @@ export class MagangHubApiClient {
             {},
             {
               headers: {
+                ...BROWSER_HEADERS,
                 "Content-Type": "application/json",
                 Accept: "application/json",
                 "X-CSRF-TOKEN": csrfToken,
                 "X-Requested-With": "XMLHttpRequest",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
                 Cookie: sessionCookie,
                 Referer: ssoUrl,
                 Origin: "https://account.kemnaker.go.id",
-                ...COMMON_BROWSER_HEADERS,
               },
               timeout: 10000,
             }
@@ -274,11 +308,11 @@ export class MagangHubApiClient {
         {
           params: { code, state },
           headers: {
+            ...BROWSER_HEADERS,
             Cookie: monevCookie,
             "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
             Referer: "https://monev.maganghub.kemnaker.go.id/",
             Origin: "https://monev.maganghub.kemnaker.go.id",
-            ...COMMON_BROWSER_HEADERS,
           },
           timeout: 10000,
         }
@@ -326,7 +360,7 @@ export class MagangHubApiClient {
             "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
             Referer: "https://monev.maganghub.kemnaker.go.id/",
             Origin: "https://monev.maganghub.kemnaker.go.id",
-            ...COMMON_BROWSER_HEADERS,
+            ...BROWSER_HEADERS,
           },
           timeout: 15000,
         }
