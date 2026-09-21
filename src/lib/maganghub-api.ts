@@ -58,57 +58,83 @@ function mergeCookies(currentCookie: string, setCookieHeader: unknown): string {
     .join("; ");
 }
 
+function formatStepError(stepName: string, error: unknown): Error {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const data = error.response?.data as { message?: string; error?: string } | string | undefined;
+    let detail = "";
+    if (typeof data === "string") {
+      detail = data.includes("<!DOCTYPE") ? "Halaman proteksi WAF/HTML terdeteksi" : data;
+    } else if (data && typeof data === "object") {
+      detail = data.message || data.error || JSON.stringify(data);
+    } else {
+      detail = error.message;
+    }
+
+    if (status === 403) {
+      return new Error(
+        `[${stepName}] Akses ditolak (403 Forbidden) oleh server/WAF Kemnaker (${detail}).`
+      );
+    }
+    return new Error(`[${stepName}] HTTP ${status || "ERR"}: ${detail}`);
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
 export class MagangHubApiClient {
   /**
    * Login ke Monev MagangHub via SSO Kemnaker Direct REST API
    */
   static async login(username: string, password: string): Promise<MonevAuthToken> {
+    // Step 1: Inisiasi SSO login
+    let ssoUrl = "";
+    let monevCookie = "";
     try {
-      // Step 1: Inisiasi SSO login
-      let ssoUrl = "";
-      let monevCookie = "";
-      try {
-        const initRes = await axios.get(`${MONEV_API_BASE}/auth/login`, {
-          maxRedirects: 0,
-          validateStatus: (status) => status >= 200 && status < 400,
-          timeout: 10000,
-          headers: {
-            ...COMMON_BROWSER_HEADERS,
-            "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
-            Referer: "https://monev.maganghub.kemnaker.go.id/",
-            Origin: "https://monev.maganghub.kemnaker.go.id",
-          },
-        });
+      const initRes = await axios.get(`${MONEV_API_BASE}/auth/login`, {
+        maxRedirects: 0,
+        validateStatus: (status) => status >= 200 && status < 400,
+        timeout: 10000,
+        headers: {
+          ...COMMON_BROWSER_HEADERS,
+          "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
+          Referer: "https://monev.maganghub.kemnaker.go.id/",
+          Origin: "https://monev.maganghub.kemnaker.go.id",
+        },
+      });
 
-        monevCookie = mergeCookies(monevCookie, initRes.headers["set-cookie"]);
+      monevCookie = mergeCookies(monevCookie, initRes.headers["set-cookie"]);
 
-        if (initRes.status === 302 || initRes.status === 301) {
-          ssoUrl = initRes.headers.location || "";
-        } else if (typeof initRes.data === "string" && initRes.data.startsWith("http")) {
-          ssoUrl = initRes.data.trim();
-        } else if (initRes.data?.data?.url) {
-          ssoUrl = initRes.data.data.url;
-        } else if (initRes.data?.url) {
-          ssoUrl = initRes.data.url;
-        }
-      } catch (err) {
-        if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
-          ssoUrl = err.response.headers.location;
-          monevCookie = mergeCookies(monevCookie, err.response.headers["set-cookie"]);
-        } else {
-          throw err;
-        }
+      if (initRes.status === 302 || initRes.status === 301) {
+        ssoUrl = initRes.headers.location || "";
+      } else if (typeof initRes.data === "string" && initRes.data.startsWith("http")) {
+        ssoUrl = initRes.data.trim();
+      } else if (initRes.data?.data?.url) {
+        ssoUrl = initRes.data.data.url;
+      } else if (initRes.data?.url) {
+        ssoUrl = initRes.data.url;
       }
-
-      if (!ssoUrl) {
-        throw new Error("Gagal menginisiasi SSO Monev: redirect URL tidak ditemukan.");
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
+        ssoUrl = err.response.headers.location;
+        monevCookie = mergeCookies(monevCookie, err.response.headers["set-cookie"]);
+      } else {
+        throw formatStepError("Step 1 - Inisiasi SSO Monev", err);
       }
+    }
 
-      // Step 2: Ambil CSRF Token dan Session Cookie dari SSO Kemnaker
+    if (!ssoUrl) {
+      throw new Error("[Step 1 - Inisiasi SSO Monev] Redirect URL tidak ditemukan.");
+    }
+
+    // Step 2: Ambil CSRF Token dan Session Cookie dari SSO Kemnaker
+    let csrfToken: string | null = null;
+    let sessionCookie = "";
+    try {
       const ssoPageRes = await axios.get(ssoUrl, {
         headers: {
           Accept:
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          Referer: "https://monev.maganghub.kemnaker.go.id/",
           ...COMMON_BROWSER_HEADERS,
         },
         timeout: 10000,
@@ -116,15 +142,20 @@ export class MagangHubApiClient {
 
       const html = ssoPageRes.data || "";
       const csrfMatch = html.match(/<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i);
-      const csrfToken = csrfMatch ? csrfMatch[1] : null;
+      csrfToken = csrfMatch ? csrfMatch[1] : null;
 
       if (!csrfToken) {
-        throw new Error("Gagal mengambil CSRF token dari halaman SSO Kemnaker.");
+        throw new Error("[Step 2 - Halaman SSO Kemnaker] CSRF token tidak ditemukan pada respons.");
       }
 
-      let sessionCookie = mergeCookies("", ssoPageRes.headers["set-cookie"]);
+      sessionCookie = mergeCookies("", ssoPageRes.headers["set-cookie"]);
+    } catch (err) {
+      throw formatStepError("Step 2 - Halaman SSO Kemnaker", err);
+    }
 
-      // Step 3: Kirim kredensial ke endpoint login SSO
+    // Step 3: Kirim kredensial ke endpoint login SSO
+    let redirectUri = "";
+    try {
       const loginPayload = { username, password };
       const loginRes = await axios.post(
         "https://account.kemnaker.go.id/auth/login",
@@ -151,85 +182,90 @@ export class MagangHubApiClient {
           loginRes.data?.errors?.password?.[0] ||
           loginRes.data?.message ||
           "Email atau kata sandi akun Kemnaker tidak sesuai.";
-        throw new Error(`Login SSO Kemnaker gagal: ${errDetail}`);
+        throw new Error(`[Step 3 - Login SSO Kemnaker] ${errDetail}`);
       }
 
-      let redirectUri =
-        loginRes.data?.data?.redirect_uri || loginRes.data?.redirect_uri;
-
-      // Update cookie preserving acw_tc & kemnaker_ri_session
+      redirectUri =
+        loginRes.data?.data?.redirect_uri || loginRes.data?.redirect_uri || "";
       sessionCookie = mergeCookies(sessionCookie, loginRes.headers["set-cookie"]);
+    } catch (err) {
+      throw formatStepError("Step 3 - Login SSO Kemnaker", err);
+    }
 
-      let callbackUrl = "";
-      if (redirectUri && redirectUri.includes("code=")) {
-        callbackUrl = redirectUri;
-      } else {
-        // Setelah login di account.kemnaker.go.id, request ssoUrl kembali dengan session cookie terautentikasi
-        try {
-          const ssoAuthRes = await axios.get(ssoUrl, {
-            headers: {
-              Accept:
-                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-              Cookie: sessionCookie,
-              ...COMMON_BROWSER_HEADERS,
-            },
-            maxRedirects: 0,
-            validateStatus: (status) => status >= 200 && status < 400,
-            timeout: 10000,
-          });
+    // Step 3b / 3c: Dapatkan callbackUrl berisi code dan state
+    let callbackUrl = "";
+    if (redirectUri && redirectUri.includes("code=")) {
+      callbackUrl = redirectUri;
+    } else {
+      try {
+        const ssoAuthRes = await axios.get(ssoUrl, {
+          headers: {
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            Cookie: sessionCookie,
+            Referer: "https://account.kemnaker.go.id/auth/login",
+            Origin: "https://account.kemnaker.go.id",
+            ...COMMON_BROWSER_HEADERS,
+          },
+          maxRedirects: 0,
+          validateStatus: (status) => status >= 200 && status < 400,
+          timeout: 10000,
+        });
 
-          sessionCookie = mergeCookies(sessionCookie, ssoAuthRes.headers["set-cookie"]);
+        sessionCookie = mergeCookies(sessionCookie, ssoAuthRes.headers["set-cookie"]);
 
-          if (ssoAuthRes.status === 302 || ssoAuthRes.status === 301) {
-            callbackUrl = ssoAuthRes.headers.location || "";
-          } else if (
-            typeof ssoAuthRes.data === "string" &&
-            ssoAuthRes.data.includes("auth-authorize")
-          ) {
-            // Butuh persetujuan OAuth client, kirim POST /auth
-            const authRes = await axios.post(
-              "https://account.kemnaker.go.id/auth",
-              {},
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                  Accept: "application/json",
-                  "X-CSRF-TOKEN": csrfToken,
-                  "X-Requested-With": "XMLHttpRequest",
-                  Cookie: sessionCookie,
-                  Referer: ssoUrl,
-                  Origin: "https://account.kemnaker.go.id",
-                  ...COMMON_BROWSER_HEADERS,
-                },
-                timeout: 10000,
-              }
-            );
-            sessionCookie = mergeCookies(sessionCookie, authRes.headers["set-cookie"]);
-            callbackUrl =
-              authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri || "";
-          }
-        } catch (err) {
-          if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
-            callbackUrl = err.response.headers.location;
-            sessionCookie = mergeCookies(sessionCookie, err.response.headers["set-cookie"]);
-          }
+        if (ssoAuthRes.status === 302 || ssoAuthRes.status === 301) {
+          callbackUrl = ssoAuthRes.headers.location || "";
+        } else if (
+          typeof ssoAuthRes.data === "string" &&
+          ssoAuthRes.data.includes("auth-authorize")
+        ) {
+          const authRes = await axios.post(
+            "https://account.kemnaker.go.id/auth",
+            {},
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-CSRF-TOKEN": csrfToken,
+                "X-Requested-With": "XMLHttpRequest",
+                Cookie: sessionCookie,
+                Referer: ssoUrl,
+                Origin: "https://account.kemnaker.go.id",
+                ...COMMON_BROWSER_HEADERS,
+              },
+              timeout: 10000,
+            }
+          );
+          sessionCookie = mergeCookies(sessionCookie, authRes.headers["set-cookie"]);
+          callbackUrl =
+            authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri || "";
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
+          callbackUrl = err.response.headers.location;
+          sessionCookie = mergeCookies(sessionCookie, err.response.headers["set-cookie"]);
+        } else {
+          throw formatStepError("Step 3b - Otorisasi Sesi Kemnaker", err);
         }
       }
+    }
 
-      if (!callbackUrl || !callbackUrl.includes("code=")) {
-        throw new Error(
-          `SSO callback tidak valid: code atau state tidak ditemukan pada ${callbackUrl || redirectUri}`
-        );
-      }
+    if (!callbackUrl || !callbackUrl.includes("code=")) {
+      throw new Error(
+        `[Step 3b - Otorisasi Sesi Kemnaker] Code atau state tidak ditemukan pada ${callbackUrl || redirectUri}`
+      );
+    }
 
-      // Step 4: Callback ke Monev API untuk tukar auth code dengan access token
+    // Step 4: Callback ke Monev API untuk tukar auth code dengan access token
+    try {
       const redirectUrlObj = new URL(callbackUrl);
       const code = redirectUrlObj.searchParams.get("code");
       const state = redirectUrlObj.searchParams.get("state");
 
       if (!code || !state) {
         throw new Error(
-          `SSO callback tidak valid: code atau state tidak ditemukan pada ${redirectUri}`
+          `[Step 4 - Callback Monev] Code atau state kosong pada URL: ${callbackUrl}`
         );
       }
 
@@ -252,31 +288,15 @@ export class MagangHubApiClient {
       const accessToken = tokenData?.access_token || tokenData?.token;
 
       if (!accessToken) {
-        throw new Error("Gagal mendapatkan access token dari callback Monev.");
+        throw new Error("[Step 4 - Callback Monev] Access token tidak ditemukan pada respons callback.");
       }
 
       return {
         accessToken,
         tokenType: tokenData?.token_type || "Bearer",
       };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const data = error.response?.data as { message?: string; error?: string } | undefined;
-        if (status === 403) {
-          throw new Error(
-            data?.message ||
-              "Akses ditolak (403 Forbidden) oleh server/WAF Kemnaker. Periksa IP atau coba beberapa saat lagi."
-          );
-        }
-        if (data?.message) {
-          throw new Error(`SSO Error: ${data.message}`);
-        }
-        if (data?.error) {
-          throw new Error(`SSO Error: ${data.error}`);
-        }
-      }
-      throw error;
+    } catch (err) {
+      throw formatStepError("Step 4 - Callback Monev", err);
     }
   }
 
