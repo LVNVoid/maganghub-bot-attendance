@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bot, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 
 export const metadata = {
   title: "Dokumentasi | MagangHub Bot Attendance",
@@ -8,11 +9,13 @@ export const metadata = {
     "Panduan lengkap setup kredensial Kemnaker, konfigurasi model AI (BYOK), webhook cron VPS, dan integrasi GitHub untuk bot absensi MagangHub Kemnaker.",
 };
 
-export default function DocsLayout({
+export default async function DocsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink-primary">
       {/* Public Header */}
@@ -32,12 +35,20 @@ export default function DocsLayout({
         </Link>
 
         <div className="flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="emerald" size="sm" className="gap-1.5 text-xs">
-              <span>Buka Dashboard</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
+          {session ? (
+            <Link href="/dashboard">
+              <Button variant="emerald" size="sm" className="gap-1.5 text-xs">
+                <span>Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login">
+              <Button variant="outline" size="sm" className="text-xs">
+                Masuk
+              </Button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -60,9 +71,15 @@ export default function DocsLayout({
             <Link href="/docs" className="hover:text-ink-primary transition-colors">
               Dokumentasi
             </Link>
-            <Link href="/login" className="hover:text-ink-primary transition-colors">
-              Masuk
-            </Link>
+            {session ? (
+              <Link href="/dashboard" className="hover:text-ink-primary transition-colors">
+                Dashboard
+              </Link>
+            ) : (
+              <Link href="/login" className="hover:text-ink-primary transition-colors">
+                Masuk
+              </Link>
+            )}
           </div>
         </div>
       </footer>
