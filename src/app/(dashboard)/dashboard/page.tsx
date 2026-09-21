@@ -1,13 +1,14 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { QuickSubmitCard } from "@/components/quick-submit-card";
 import { CommitsPreview } from "@/components/commits-preview";
 import { SubmitLogsFeed } from "@/components/submit-logs-feed";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { getTodayJakartaStr } from "@/lib/date-utils";
 import { getUserAiConfig } from "@/services/ai-config-service";
-import { FileCheck, Activity, KeyRound, Cpu, Sparkles } from "lucide-react";
+import { FileCheck, Activity, KeyRound, Cpu, Sparkles, AlertCircle } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -66,6 +67,29 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Alert Banner: Kredensial Belum Dikonfigurasi */}
+      {!credential && (
+        <div className="p-3.5 sm:p-4 rounded-md bg-warning/10 border border-warning/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-warning">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 text-warning" />
+            <div>
+              <p className="text-xs font-semibold text-ink-primary">
+                Kredensial MagangHub Belum Dikonfigurasi
+              </p>
+              <p className="text-[11px] text-ink-secondary">
+                Hubungkan akun MagangHub di menu Pengaturan untuk mengaktifkan fitur absensi dan sinkronisasi laporan otomatis.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/settings"
+            className="inline-flex items-center gap-1 text-xs font-medium text-warning hover:underline shrink-0"
+          >
+            Buka Pengaturan &rarr;
+          </Link>
+        </div>
+      )}
+
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Metric 1: Total Laporan */}
@@ -105,9 +129,11 @@ export default async function DashboardPage() {
             <KeyRound className="w-4 h-4 text-primary" />
           </div>
           <div className="text-sm font-semibold text-ink-primary pt-1">
-            {credential?.status === "VALID" ? (
+            {!credential ? (
+              <span className="text-warning">Belum Diatur</span>
+            ) : credential.status === "VALID" ? (
               <span className="text-primary">Valid &amp; Aktif</span>
-            ) : credential?.status === "INVALID" ? (
+            ) : credential.status === "INVALID" ? (
               <span className="text-error">Tidak Valid</span>
             ) : (
               <span className="text-ink-muted">Belum Dicek</span>
