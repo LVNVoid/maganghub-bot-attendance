@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +35,8 @@ export function ReportForm({
   onDateChange,
   aiConfig,
 }: ReportFormProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const isSubmitted = initialReport?.status === "SUBMITTED";
   const [date, setDate] = useState(initialReport?.date || selectedDate);
   const [activity, setActivity] = useState(initialReport?.activity || "");
@@ -45,6 +48,9 @@ export function ReportForm({
   const handleDateSelect = (newDate: string) => {
     setDate(newDate);
     if (onDateChange) onDateChange(newDate);
+    startTransition(() => {
+      router.push(`/reports?date=${newDate}`);
+    });
   };
 
   const handleGenerateAI = async () => {
@@ -148,12 +154,20 @@ export function ReportForm({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => handleDateSelect(e.target.value)}
-              className="flex-1 sm:w-36 text-xs h-10 sm:h-8"
-            />
+            <div className="relative flex-1 sm:w-36">
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => handleDateSelect(e.target.value)}
+                disabled={isPending}
+                className="w-full text-xs h-10 sm:h-8"
+              />
+              {isPending && (
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                </div>
+              )}
+            </div>
 
             <Button
               type="button"

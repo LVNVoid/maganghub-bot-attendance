@@ -76,6 +76,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       </div>
 
       <ReportForm
+        key={targetDateStr}
         initialReport={
           targetReport
             ? {
