@@ -42,6 +42,25 @@ export async function generateReportDraft(
   const dateObj = new Date(targetDate);
 
   try {
+    const existingReport = await db.report.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: dateObj,
+        },
+      },
+    });
+
+    if (existingReport && existingReport.status === "SUBMITTED") {
+      return {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Laporan tanggal ini sudah berstatus SUBMITTED dan tidak dapat di-generate ulang.",
+        },
+      };
+    }
+
     const groups = await fetchAllTrackedCommitsForUser(userId, targetDate);
     const summary = formatCommitsToActivitySummary(groups);
     const userAiConfig = await getDecryptedUserAiConfig(userId);
@@ -139,6 +158,25 @@ export async function saveReportDraft(
   const dateObj = new Date(dateStr);
 
   try {
+    const existingReport = await db.report.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: dateObj,
+        },
+      },
+    });
+
+    if (existingReport && existingReport.status === "SUBMITTED") {
+      return {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Laporan tanggal ini sudah berstatus SUBMITTED dan tidak dapat diedit.",
+        },
+      };
+    }
+
     const report = await db.report.upsert({
       where: {
         userId_date: {

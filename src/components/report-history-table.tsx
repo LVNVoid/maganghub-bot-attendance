@@ -10,6 +10,7 @@ import type { ReportItem } from "@/schemas/report-schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ReportDetailModal } from "@/components/report-detail-modal";
 import {
   Search,
   CheckCircle2,
@@ -22,6 +23,8 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Eye,
+  Lock,
 } from "lucide-react";
 
 export type { ReportItem };
@@ -35,6 +38,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
+  const [selectedReportForModal, setSelectedReportForModal] = useState<ReportItem | null>(null);
 
   const PAGE_SIZE = 10;
   const {
@@ -146,145 +150,292 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
             <p>Tidak ada data laporan yang sesuai dengan kriteria filter.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-hairline text-ink-muted bg-canvas-deep">
-                  <th className="py-2.5 px-4 font-medium w-32">Tanggal</th>
-                  <th className="py-2.5 px-3 font-medium w-28">Status</th>
-                  <th className="py-2.5 px-3 font-medium w-24">Sumber</th>
-                  <th className="py-2.5 px-4 font-medium">Ringkasan Aktivitas</th>
-                  <th className="py-2.5 px-4 font-medium text-right w-40">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {paginatedReports.map((r) => {
-                  const isExpanded = expandedId === r.id;
-                  const isDeleting = deletingId === r.id || isPending;
-                  const canDelete = r.status !== "SUBMITTED";
+          <>
+            {/* Mobile Stacked Card View (< sm) */}
+            <div className="block sm:hidden divide-y divide-hairline">
+              {paginatedReports.map((r) => {
+                const isDeleting = deletingId === r.id || isPending;
+                const canDelete = r.status !== "SUBMITTED";
+                const isSubmitted = r.status === "SUBMITTED";
 
-                  return (
-                    <tr
-                      key={r.id}
-                      className="hover:bg-canvas-deep/50 transition-colors group"
-                    >
-                      <td className="py-3 px-4 font-mono font-medium text-ink-primary align-top">
-                        <span>{r.date}</span>
-                      </td>
-
-                      <td className="py-3 px-3 align-top">
+                return (
+                  <div key={r.id} className="p-4 space-y-3 bg-canvas-subtle">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-ink-primary">
+                          {r.date}
+                        </span>
                         {getStatusBadge(r.status, r.date)}
-                      </td>
-
-                      <td className="py-3 px-3 font-mono text-ink-secondary text-[11px] align-top">
+                      </div>
+                      <span className="font-mono text-[10px] text-ink-muted px-1.5 py-0.5 rounded-xs bg-canvas-deep border border-hairline">
                         {r.sourceType}
-                      </td>
+                      </span>
+                    </div>
 
-                      <td className="py-3 px-4 text-ink-secondary align-top">
-                        <div className="space-y-1">
-                          <p
-                            className={`font-sans text-ink-primary leading-relaxed ${
-                              isExpanded ? "" : "line-clamp-2"
-                            }`}
-                          >
-                            {r.activity}
-                          </p>
+                    <div
+                      onClick={() => setSelectedReportForModal(r)}
+                      className="cursor-pointer group rounded-xs bg-canvas-deep p-3 border border-hairline hover:border-primary/40 transition-colors"
+                    >
+                      <p className="font-sans text-xs text-ink-secondary leading-relaxed line-clamp-2 group-hover:text-ink-primary transition-colors">
+                        {r.activity}
+                      </p>
+                      <div className="mt-2 flex items-center gap-1 text-[11px] text-primary font-medium">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Baca Ringkasan Lengkap</span>
+                      </div>
+                    </div>
 
-                          {isExpanded && (
-                            <div className="mt-3 pt-3 border-t border-hairline space-y-2.5 text-[11px] bg-canvas-deep p-3 rounded-xs">
-                              <div>
-                                <span className="font-semibold text-primary block mb-0.5">
-                                  Pembelajaran:
-                                </span>
-                                <p className="text-ink-secondary leading-relaxed">
-                                  {r.learning}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="font-semibold text-warning block mb-0.5">
-                                  Kendala &amp; Solusi:
-                                </span>
-                                <p className="text-ink-secondary leading-relaxed">
-                                  {r.obstacles}
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                    <div className="flex items-center justify-between pt-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedReportForModal(r)}
+                        className="h-8 px-2.5 text-xs text-ink-secondary gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-primary" />
+                        <span>Detail</span>
+                      </Button>
 
-                          <button
-                            type="button"
-                            onClick={() => toggleExpand(r.id)}
-                            className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
-                          >
-                            {isExpanded ? (
-                              <>
-                                <span>Tutup Detail</span>
-                                <ChevronUp className="w-3 h-3" />
-                              </>
-                            ) : (
-                              <>
-                                <span>Lihat Selengkapnya</span>
-                                <ChevronDown className="w-3 h-3" />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4 text-right align-top">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Edit / Buka di Editor */}
+                      <div className="flex items-center gap-2">
+                        {isSubmitted ? (
                           <Link href={`/reports?date=${r.date}`}>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 text-[11px] gap-1"
-                              title="Buka di Editor Laporan"
+                              className="h-8 px-2.5 text-xs gap-1 border-hairline text-ink-secondary"
+                              title="Buka Laporan (Read-Only)"
+                            >
+                              <Lock className="w-3 h-3 text-primary" />
+                              <span>Buka</span>
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Link href={`/reports?date=${r.date}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2.5 text-xs gap-1"
+                              title="Edit Laporan di Editor"
                             >
                               <Edit3 className="w-3 h-3" />
                               <span>Edit</span>
                             </Button>
                           </Link>
+                        )}
 
-                          {/* Tombol Hapus (Hanya untuk DRAFT / FAILED) */}
-                          {canDelete ? (
+                        {canDelete ? (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={isDeleting}
+                            onClick={() => setReportToDelete(r)}
+                            className="h-8 px-2.5 text-xs gap-1"
+                            title="Hapus laporan ini"
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                            <span>Hapus</span>
+                          </Button>
+                        ) : (
+                          <span
+                            className="text-[10px] font-mono text-ink-muted px-1.5"
+                            title="Laporan sudah tersubmit ke Monev tidak dapat dihapus"
+                          >
+                            Terkunci
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-hairline text-ink-muted bg-canvas-deep">
+                    <th className="py-2.5 px-4 font-medium w-32">Tanggal</th>
+                    <th className="py-2.5 px-3 font-medium w-28">Status</th>
+                    <th className="py-2.5 px-3 font-medium w-24">Sumber</th>
+                    <th className="py-2.5 px-4 font-medium">Ringkasan Aktivitas</th>
+                    <th className="py-2.5 px-4 font-medium text-right w-44">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {paginatedReports.map((r) => {
+                    const isExpanded = expandedId === r.id;
+                    const isDeleting = deletingId === r.id || isPending;
+                    const canDelete = r.status !== "SUBMITTED";
+                    const isSubmitted = r.status === "SUBMITTED";
+
+                    return (
+                      <tr
+                        key={r.id}
+                        className="hover:bg-canvas-deep/50 transition-colors group"
+                      >
+                        <td className="py-3 px-4 font-mono font-medium text-ink-primary align-top">
+                          <span>{r.date}</span>
+                        </td>
+
+                        <td className="py-3 px-3 align-top">
+                          {getStatusBadge(r.status, r.date)}
+                        </td>
+
+                        <td className="py-3 px-3 font-mono text-ink-secondary text-[11px] align-top">
+                          {r.sourceType}
+                        </td>
+
+                        <td className="py-3 px-4 text-ink-secondary align-top">
+                          <div className="space-y-1">
+                            <p
+                              className={`font-sans text-ink-primary leading-relaxed ${
+                                isExpanded ? "" : "line-clamp-2"
+                              }`}
+                            >
+                              {r.activity}
+                            </p>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t border-hairline space-y-2.5 text-[11px] bg-canvas-deep p-3 rounded-xs">
+                                <div>
+                                  <span className="font-semibold text-primary block mb-0.5">
+                                    Pembelajaran:
+                                  </span>
+                                  <p className="text-ink-secondary leading-relaxed">
+                                    {r.learning}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-warning block mb-0.5">
+                                    Kendala &amp; Solusi:
+                                  </span>
+                                  <p className="text-ink-secondary leading-relaxed">
+                                    {r.obstacles}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-3 mt-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedReportForModal(r)}
+                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>Modal Detail</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(r.id)}
+                                className="inline-flex items-center gap-1 text-[10px] text-ink-muted hover:text-ink-primary"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <span>Tutup Inline</span>
+                                    <ChevronUp className="w-3 h-3" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Buka Inline</span>
+                                    <ChevronDown className="w-3 h-3" />
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4 text-right align-top">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Buka Modal Detail */}
                             <Button
                               type="button"
-                              variant="destructive"
+                              variant="ghost"
                               size="sm"
-                              disabled={isDeleting}
-                              onClick={() => setReportToDelete(r)}
+                              onClick={() => setSelectedReportForModal(r)}
                               className="h-7 px-2 text-[11px] gap-1"
-                              title="Hapus laporan ini"
+                              title="Buka Modal Detail"
                             >
-                              {isDeleting ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3 h-3" />
-                              )}
-                              <span>Hapus</span>
+                              <Eye className="w-3 h-3 text-primary" />
+                              <span>Detail</span>
                             </Button>
-                          ) : (
-                            <span
-                              className="text-[10px] font-mono text-ink-muted px-1"
-                              title="Laporan sudah tersubmit ke Monev tidak dapat dihapus"
-                            >
-                              Terkunci
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+
+                            {/* Edit / Buka di Editor */}
+                            {isSubmitted ? (
+                              <Link href={`/reports?date=${r.date}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-[11px] gap-1 border-hairline text-ink-secondary"
+                                  title="Buka di Editor (Read-Only)"
+                                >
+                                  <Lock className="w-3 h-3 text-primary" />
+                                  <span>Buka</span>
+                                </Button>
+                              </Link>
+                            ) : (
+                              <Link href={`/reports?date=${r.date}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-[11px] gap-1"
+                                  title="Buka di Editor Laporan"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                  <span>Edit</span>
+                                </Button>
+                              </Link>
+                            )}
+
+                            {/* Tombol Hapus (Hanya untuk DRAFT / FAILED) */}
+                            {canDelete ? (
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={isDeleting}
+                                onClick={() => setReportToDelete(r)}
+                                className="h-7 px-2 text-[11px] gap-1"
+                                title="Hapus laporan ini"
+                              >
+                                {isDeleting ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3 h-3" />
+                                )}
+                                <span>Hapus</span>
+                              </Button>
+                            ) : (
+                              <span
+                                className="text-[10px] font-mono text-ink-muted px-1"
+                                title="Laporan sudah tersubmit ke Monev tidak dapat dihapus"
+                              >
+                                Terkunci
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-3 border-t border-hairline text-xs bg-canvas-deep">
+          <div className="flex flex-col sm:flex-row items-center justify-between p-3 gap-2.5 sm:gap-0 border-t border-hairline text-xs bg-canvas-deep">
             <span className="text-[11px] text-ink-muted">
               Menampilkan {startIndex + 1}–
               {Math.min(startIndex + PAGE_SIZE, totalItems)} dari {totalItems}{" "}
@@ -296,7 +447,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-8 sm:h-7 px-2.5 sm:px-2 text-xs"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
@@ -310,7 +461,7 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-8 sm:h-7 px-2.5 sm:px-2 text-xs"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               >
@@ -321,6 +472,13 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
           </div>
         )}
       </div>
+
+      {/* Modal Detail Riwayat */}
+      <ReportDetailModal
+        isOpen={!!selectedReportForModal}
+        onClose={() => setSelectedReportForModal(null)}
+        report={selectedReportForModal}
+      />
 
       {/* Reusable Confirm Dialog */}
       <ConfirmDialog

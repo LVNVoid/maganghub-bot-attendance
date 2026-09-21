@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { generateReportDraft, saveReportDraft } from "@/actions/report-actions";
-import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2, Lock } from "lucide-react";
 
 interface ReportData {
   id?: string;
@@ -34,6 +34,7 @@ export function ReportForm({
   onDateChange,
   aiConfig,
 }: ReportFormProps) {
+  const isSubmitted = initialReport?.status === "SUBMITTED";
   const [date, setDate] = useState(initialReport?.date || selectedDate);
   const [activity, setActivity] = useState(initialReport?.activity || "");
   const [learning, setLearning] = useState(initialReport?.learning || "");
@@ -47,6 +48,11 @@ export function ReportForm({
   };
 
   const handleGenerateAI = async () => {
+    if (isSubmitted) {
+      toast.error("Laporan tanggal ini sudah berstatus SUBMITTED dan terkunci.");
+      return;
+    }
+
     setGenerating(true);
 
     const res = await generateReportDraft(date);
@@ -63,6 +69,11 @@ export function ReportForm({
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitted) {
+      toast.error("Laporan sudah berstatus SUBMITTED dan tidak dapat diedit.");
+      return;
+    }
+
     setSaving(true);
 
     const formData = new FormData(e.currentTarget);
@@ -149,8 +160,8 @@ export function ReportForm({
               variant="secondary"
               size="sm"
               onClick={handleGenerateAI}
-              disabled={generating}
-              className="gap-1.5 h-10 sm:h-8 px-3 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0"
+              disabled={generating || isSubmitted}
+              className="gap-1.5 h-10 sm:h-8 px-3 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0 disabled:opacity-50"
             >
               {generating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -162,6 +173,15 @@ export function ReportForm({
           </div>
         </div>
       </div>
+
+      {isSubmitted && (
+        <div className="flex items-start sm:items-center gap-2.5 p-3 sm:p-3.5 rounded-sm bg-primary/10 border border-primary/30 text-xs text-primary animate-in fade-in duration-150">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0" />
+          <span className="leading-relaxed">
+            Laporan tanggal <strong>{date}</strong> sudah berstatus <strong>SUBMITTED</strong> ke Monev MagangHub dan telah dikunci. Anda tidak dapat mengedit atau menimpa laporan ini.
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
         {/* Section 1: Uraian Aktivitas */}
@@ -178,6 +198,7 @@ export function ReportForm({
             placeholder="Tuliskan ringkasan aktivitas nyata pengerjaan hari ini (minimal 100 karakter)..."
             value={activity}
             onChange={(e) => setActivity(e.target.value)}
+            disabled={isSubmitted}
             required
           />
         </div>
@@ -196,6 +217,7 @@ export function ReportForm({
             placeholder="Tuliskan hal teknis atau profesional yang dipelajari hari ini (minimal 100 karakter)..."
             value={learning}
             onChange={(e) => setLearning(e.target.value)}
+            disabled={isSubmitted}
             required
           />
         </div>
@@ -214,6 +236,7 @@ export function ReportForm({
             placeholder="Tuliskan kendala teknis atau tantangan yang dihadapi serta langkah solusinya (minimal 100 karakter)..."
             value={obstacles}
             onChange={(e) => setObstacles(e.target.value)}
+            disabled={isSubmitted}
             required
           />
         </div>
@@ -221,7 +244,9 @@ export function ReportForm({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-hairline">
           <div className="text-xs text-ink-muted">
             Status Validasi:{" "}
-            {isFormValid ? (
+            {isSubmitted ? (
+              <span className="text-primary font-medium">Laporan telah dikunci (SUBMITTED)</span>
+            ) : isFormValid ? (
               <span className="text-primary font-medium">Siap disubmit</span>
             ) : (
               <span className="text-warning font-medium">Belum memenuhi batas minimal karakter</span>
@@ -230,16 +255,18 @@ export function ReportForm({
 
           <Button
             type="submit"
-            variant="secondary"
-            disabled={saving}
+            variant={isSubmitted ? "outline" : "secondary"}
+            disabled={saving || isSubmitted}
             className="w-full sm:w-auto gap-2 text-xs h-10 sm:h-8 font-semibold"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isSubmitted ? (
+              <Lock className="w-3.5 h-3.5 text-primary" />
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            Simpan Draft
+            {isSubmitted ? "Laporan Terkunci (Submitted)" : "Simpan Draft"}
           </Button>
         </div>
       </form>
