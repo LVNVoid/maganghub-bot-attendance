@@ -97,8 +97,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       />
 
       {/* History Preview Card */}
-      <div className="bg-canvas-subtle border border-hairline rounded-md p-6 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
           <div>
             <h2 className="text-sm font-semibold text-ink-primary">
               Riwayat Laporan Terakhir
@@ -108,8 +108,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             </p>
           </div>
 
-          <Link href="/reports/history">
-            <Button variant="ghost" size="sm" className="text-xs text-primary gap-1">
+          <Link href="/reports/history" className="self-start sm:self-auto">
+            <Button variant="ghost" size="sm" className="text-xs text-primary gap-1 p-0 sm:px-3 h-auto sm:h-8 hover:bg-transparent sm:hover:bg-surface">
               <span>Buka Halaman Riwayat Lengkap</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
@@ -121,43 +121,76 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             Belum ada riwayat laporan tersimpan.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-hairline text-ink-muted">
-                  <th className="py-2.5 px-3 font-medium">Tanggal</th>
-                  <th className="py-2.5 px-3 font-medium">Status</th>
-                  <th className="py-2.5 px-3 font-medium">Ringkasan Aktivitas</th>
-                  <th className="py-2.5 px-3 font-medium text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {recentReports.map((r) => {
-                  const dateStr = r.date;
-                  return (
-                    <tr key={r.id} className="hover:bg-canvas-deep/50">
-                      <td className="py-3 px-3 font-mono text-ink-primary whitespace-nowrap">
+          <>
+            {/* Mobile Stacked Card List (< sm) */}
+            <div className="block sm:hidden space-y-2.5">
+              {recentReports.map((r) => {
+                const dateStr = r.date;
+                return (
+                  <div
+                    key={r.id}
+                    className="p-3 rounded-sm bg-canvas border border-hairline space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-semibold text-ink-primary">
                         {dateStr}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        {getStatusBadge(r.status)}
-                      </td>
-                      <td className="py-3 px-3 text-ink-secondary truncate max-w-md">
-                        {r.activity.substring(0, 90)}...
-                      </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <Link href={`/reports?date=${dateStr}`}>
-                          <Button variant="outline" size="sm" className="h-6 px-2 text-[10px]">
-                            Buka
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </span>
+                      {getStatusBadge(r.status)}
+                    </div>
+                    <p className="text-xs text-ink-secondary line-clamp-2 leading-relaxed">
+                      {r.activity}
+                    </p>
+                    <div className="pt-1 flex justify-end">
+                      <Link href={`/reports?date=${dateStr}`} className="w-full">
+                        <Button variant="outline" size="sm" className="w-full h-8 text-xs">
+                          Buka di Editor
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-hairline text-ink-muted">
+                    <th className="py-2.5 px-3 font-medium">Tanggal</th>
+                    <th className="py-2.5 px-3 font-medium">Status</th>
+                    <th className="py-2.5 px-3 font-medium">Ringkasan Aktivitas</th>
+                    <th className="py-2.5 px-3 font-medium text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {recentReports.map((r) => {
+                    const dateStr = r.date;
+                    return (
+                      <tr key={r.id} className="hover:bg-canvas-deep/50">
+                        <td className="py-3 px-3 font-mono text-ink-primary whitespace-nowrap">
+                          {dateStr}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          {getStatusBadge(r.status)}
+                        </td>
+                        <td className="py-3 px-3 text-ink-secondary truncate max-w-md">
+                          {r.activity.substring(0, 90)}...
+                        </td>
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          <Link href={`/reports?date=${dateStr}`}>
+                            <Button variant="outline" size="sm" className="h-6 px-2 text-[10px]">
+                              Buka
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

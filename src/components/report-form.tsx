@@ -115,31 +115,33 @@ export function ReportForm({
           </p>
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-          {aiConfig?.isReady ? (
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20 shrink-0"
-              title={`Model AI Aktif: ${aiConfig.modelName}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              AI Siap &bull; {aiConfig.modelName}
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface text-ink-muted border border-hairline shrink-0"
-              title="Kunci API pribadi belum diisi. Pembuatan laporan menggunakan generator cerdas lokal (0 token)."
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-              AI: Fallback 0-Token
-            </span>
-          )}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-2 w-full sm:w-auto">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            {aiConfig?.isReady ? (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/20 shrink-0"
+                title={`Model AI Aktif: ${aiConfig.modelName}`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                AI Siap &bull; {aiConfig.modelName}
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-surface text-ink-muted border border-hairline shrink-0"
+                title="Kunci API pribadi belum diisi. Pembuatan laporan menggunakan generator cerdas lokal (0 token)."
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+                AI: Fallback 0-Token
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Input
               type="date"
               value={date}
               onChange={(e) => handleDateSelect(e.target.value)}
-              className="flex-1 sm:w-36 text-xs h-9 sm:h-8"
+              className="flex-1 sm:w-36 text-xs h-10 sm:h-8"
             />
 
             <Button
@@ -148,7 +150,7 @@ export function ReportForm({
               size="sm"
               onClick={handleGenerateAI}
               disabled={generating}
-              className="gap-1.5 h-9 sm:h-8 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0"
+              className="gap-1.5 h-10 sm:h-8 px-3 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0"
             >
               {generating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -230,7 +232,7 @@ export function ReportForm({
             type="submit"
             variant="secondary"
             disabled={saving}
-            className="w-full sm:w-auto gap-2 text-xs h-9 sm:h-8"
+            className="w-full sm:w-auto gap-2 text-xs h-10 sm:h-8 font-semibold"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
