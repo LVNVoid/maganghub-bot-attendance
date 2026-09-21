@@ -51,9 +51,11 @@ function mergeCookies(currentCookie: string, setCookieHeader: unknown): string {
   }
 
   const rawList: string[] = Array.isArray(setCookieHeader)
-    ? setCookieHeader
+    ? setCookieHeader.flatMap((item) =>
+        typeof item === "string" ? item.split(/,\s*(?=[a-zA-Z0-9_-]+=)/) : []
+      )
     : typeof setCookieHeader === "string"
-    ? [setCookieHeader]
+    ? setCookieHeader.split(/,\s*(?=[a-zA-Z0-9_-]+=)/)
     : [];
 
   for (const item of rawList) {
