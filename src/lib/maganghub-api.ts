@@ -22,6 +22,41 @@ export interface SubmitResult {
 
 const MONEV_API_BASE = "https://monev-api.maganghub.kemnaker.go.id/api/v1";
 const FRONTEND_BUILD_ID = "5554ff014eccd220f80524df263ae513d8ce1e25-production";
+const DEFAULT_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const COMMON_BROWSER_HEADERS = {
+  "User-Agent": DEFAULT_USER_AGENT,
+  "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+};
+
+function mergeCookies(currentCookie: string, setCookieHeader: unknown): string {
+  const cookieMap = new Map<string, string>();
+
+  if (currentCookie) {
+    currentCookie.split(";").forEach((part) => {
+      const [k, ...v] = part.trim().split("=");
+      if (k) cookieMap.set(k.trim(), v.join("="));
+    });
+  }
+
+  const rawList: string[] = Array.isArray(setCookieHeader)
+    ? setCookieHeader
+    : typeof setCookieHeader === "string"
+    ? [setCookieHeader]
+    : [];
+
+  for (const item of rawList) {
+    const main = item.split(";")[0]?.trim();
+    if (main) {
+      const [k, ...v] = main.split("=");
+      if (k) cookieMap.set(k.trim(), v.join("="));
+    }
+  }
+
+  return Array.from(cookieMap.entries())
+    .map(([k, v]) => `${k}=${v}`)
+    .join("; ");
+}
 
 export class MagangHubApiClient {
   /**
@@ -38,18 +73,14 @@ export class MagangHubApiClient {
           validateStatus: (status) => status >= 200 && status < 400,
           timeout: 10000,
           headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            ...COMMON_BROWSER_HEADERS,
+            "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
+            Referer: "https://monev.maganghub.kemnaker.go.id/",
+            Origin: "https://monev.maganghub.kemnaker.go.id",
           },
         });
 
-        // Extract monev cookies (especially monev_oauth_state)
-        const setCookie: unknown = initRes.headers["set-cookie"];
-        if (Array.isArray(setCookie)) {
-          monevCookie = setCookie.map((c) => String(c).split(";")[0]).join("; ");
-        } else if (typeof setCookie === "string") {
-          monevCookie = (setCookie as string).split(";")[0];
-        }
+        monevCookie = mergeCookies(monevCookie, initRes.headers["set-cookie"]);
 
         if (initRes.status === 302 || initRes.status === 301) {
           ssoUrl = initRes.headers.location || "";
@@ -63,6 +94,7 @@ export class MagangHubApiClient {
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
           ssoUrl = err.response.headers.location;
+          monevCookie = mergeCookies(monevCookie, err.response.headers["set-cookie"]);
         } else {
           throw err;
         }
@@ -77,8 +109,7 @@ export class MagangHubApiClient {
         headers: {
           Accept:
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          ...COMMON_BROWSER_HEADERS,
         },
         timeout: 10000,
       });
@@ -91,13 +122,7 @@ export class MagangHubApiClient {
         throw new Error("Gagal mengambil CSRF token dari halaman SSO Kemnaker.");
       }
 
-      const ssoSetCookie: unknown = ssoPageRes.headers["set-cookie"];
-      let sessionCookie = "";
-      if (Array.isArray(ssoSetCookie)) {
-        sessionCookie = ssoSetCookie.map((c) => String(c).split(";")[0]).join("; ");
-      } else if (typeof ssoSetCookie === "string") {
-        sessionCookie = (ssoSetCookie as string).split(";")[0];
-      }
+      let sessionCookie = mergeCookies("", ssoPageRes.headers["set-cookie"]);
 
       // Step 3: Kirim kredensial ke endpoint login SSO
       const loginPayload = { username, password };
@@ -113,8 +138,7 @@ export class MagangHubApiClient {
             Cookie: sessionCookie,
             Referer: ssoUrl,
             Origin: "https://account.kemnaker.go.id",
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            ...COMMON_BROWSER_HEADERS,
           },
           timeout: 12000,
           validateStatus: (status) => status >= 200 && status < 500,
@@ -133,14 +157,8 @@ export class MagangHubApiClient {
       let redirectUri =
         loginRes.data?.data?.redirect_uri || loginRes.data?.redirect_uri;
 
-      // Ambil updated session cookie dari login response jika ada
-      const loginSetCookie: unknown = loginRes.headers["set-cookie"];
-      let authedSessionCookie = sessionCookie;
-      if (Array.isArray(loginSetCookie)) {
-        authedSessionCookie = loginSetCookie.map((c) => String(c).split(";")[0]).join("; ");
-      } else if (typeof loginSetCookie === "string") {
-        authedSessionCookie = (loginSetCookie as string).split(";")[0];
-      }
+      // Update cookie preserving acw_tc & kemnaker_ri_session
+      sessionCookie = mergeCookies(sessionCookie, loginRes.headers["set-cookie"]);
 
       let callbackUrl = "";
       if (redirectUri && redirectUri.includes("code=")) {
@@ -152,14 +170,15 @@ export class MagangHubApiClient {
             headers: {
               Accept:
                 "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-              Cookie: authedSessionCookie,
-              "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              Cookie: sessionCookie,
+              ...COMMON_BROWSER_HEADERS,
             },
             maxRedirects: 0,
             validateStatus: (status) => status >= 200 && status < 400,
             timeout: 10000,
           });
+
+          sessionCookie = mergeCookies(sessionCookie, ssoAuthRes.headers["set-cookie"]);
 
           if (ssoAuthRes.status === 302 || ssoAuthRes.status === 301) {
             callbackUrl = ssoAuthRes.headers.location || "";
@@ -177,21 +196,22 @@ export class MagangHubApiClient {
                   Accept: "application/json",
                   "X-CSRF-TOKEN": csrfToken,
                   "X-Requested-With": "XMLHttpRequest",
-                  Cookie: authedSessionCookie,
+                  Cookie: sessionCookie,
                   Referer: ssoUrl,
                   Origin: "https://account.kemnaker.go.id",
-                  "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                  ...COMMON_BROWSER_HEADERS,
                 },
                 timeout: 10000,
               }
             );
+            sessionCookie = mergeCookies(sessionCookie, authRes.headers["set-cookie"]);
             callbackUrl =
               authRes.data?.data?.redirect_uri || authRes.data?.redirect_uri || "";
           }
         } catch (err) {
           if (axios.isAxiosError(err) && err.response?.status === 302 && err.response?.headers?.location) {
             callbackUrl = err.response.headers.location;
+            sessionCookie = mergeCookies(sessionCookie, err.response.headers["set-cookie"]);
           }
         }
       }
@@ -220,8 +240,9 @@ export class MagangHubApiClient {
           headers: {
             Cookie: monevCookie,
             "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            Referer: "https://monev.maganghub.kemnaker.go.id/",
+            Origin: "https://monev.maganghub.kemnaker.go.id",
+            ...COMMON_BROWSER_HEADERS,
           },
           timeout: 10000,
         }
@@ -239,10 +260,20 @@ export class MagangHubApiClient {
         tokenType: tokenData?.token_type || "Bearer",
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.data) {
-        const data = error.response.data as { message?: string };
-        if (data.message) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const data = error.response?.data as { message?: string; error?: string } | undefined;
+        if (status === 403) {
+          throw new Error(
+            data?.message ||
+              "Akses ditolak (403 Forbidden) oleh server/WAF Kemnaker. Periksa IP atau coba beberapa saat lagi."
+          );
+        }
+        if (data?.message) {
           throw new Error(`SSO Error: ${data.message}`);
+        }
+        if (data?.error) {
+          throw new Error(`SSO Error: ${data.error}`);
         }
       }
       throw error;
@@ -273,6 +304,9 @@ export class MagangHubApiClient {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             "X-Frontend-Build-ID": FRONTEND_BUILD_ID,
+            Referer: "https://monev.maganghub.kemnaker.go.id/",
+            Origin: "https://monev.maganghub.kemnaker.go.id",
+            ...COMMON_BROWSER_HEADERS,
           },
           timeout: 15000,
         }
