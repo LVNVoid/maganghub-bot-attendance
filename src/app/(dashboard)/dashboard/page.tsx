@@ -29,6 +29,7 @@ export default async function DashboardPage() {
     commitsGroups,
     recentLogs,
     aiConfig,
+    trackedRepoCount,
   ] = await Promise.all([
     db.maganghubCredential.findUnique({
       where: { userId },
@@ -54,6 +55,9 @@ export default async function DashboardPage() {
       take: 6,
     }),
     getUserAiConfig(userId),
+    db.githubRepo.count({
+      where: { userId, isActive: true },
+    }),
   ]);
 
   return (
@@ -198,7 +202,7 @@ export default async function DashboardPage() {
 
       {/* Grid: Commits Preview + Recent Logs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CommitsPreview groups={commitsGroups} date={todayStr} />
+        <CommitsPreview groups={commitsGroups} date={todayStr} trackedRepoCount={trackedRepoCount} />
         <SubmitLogsFeed logs={recentLogs} />
       </div>
     </div>

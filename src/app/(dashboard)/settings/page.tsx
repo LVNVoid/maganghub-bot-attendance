@@ -5,6 +5,7 @@ import {
   getUserTrackedRepos,
   getUserAutomationConfig,
   updateAutomationConfig,
+  getUserGithubAccount,
 } from "@/services/settings-service";
 import { getUserAiConfig } from "@/services/ai-config-service";
 import { MaganghubCredentialCard } from "@/components/maganghub-credential-card";
@@ -21,12 +22,13 @@ export default async function SettingsPage() {
 
   const userId = session.user.id;
 
-  // Fetch credential, repos, automation config, and AI config in parallel via service layer
-  const [credential, repos, automation, aiConfig] = await Promise.all([
+  // Fetch credential, repos, automation config, AI config, and GitHub account in parallel via service layer
+  const [credential, repos, automation, aiConfig, githubAccount] = await Promise.all([
     getUserMaganghubCredential(userId),
     getUserTrackedRepos(userId),
     getUserAutomationConfig(userId),
     getUserAiConfig(userId),
+    getUserGithubAccount(userId),
   ]);
 
   // Ensure an automationConfig exists for the user
@@ -79,7 +81,11 @@ export default async function SettingsPage() {
           emailDisplay={emailDisplay}
         />
 
-        <GithubRepoCard repos={repos} />
+        <GithubRepoCard
+          repos={repos}
+          hasToken={!!githubAccount}
+          tokenType={githubAccount?.provider === "github" ? "OAUTH" : githubAccount ? "PAT" : undefined}
+        />
 
         <AutomationConfigCard
           isEnabled={activeAutomation.isEnabled}

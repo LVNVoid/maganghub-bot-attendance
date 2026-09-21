@@ -105,3 +105,17 @@ export async function toggleTrackedRepo(
     data: { isActive },
   });
 }
+
+export async function getUserGithubAccount(userId: string) {
+  return db.account.findFirst({
+    where: {
+      userId,
+      provider: { in: ["github", "github_pat"] },
+    },
+    select: {
+      id: true,
+      provider: true,
+      access_token: true,
+    },
+  });
+}

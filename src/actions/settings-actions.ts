@@ -310,6 +310,8 @@ export async function addGithubRepo(
     });
 
     revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
     return { success: true };
   } catch (err) {
     console.error("Add repo error:", err);
@@ -334,6 +336,8 @@ export async function deleteGithubRepo(
     });
 
     revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
     return { success: true };
   } catch (err) {
     console.error("Delete repo error:", err);
@@ -360,9 +364,81 @@ export async function toggleTrackRepo(
     });
 
     revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
     return { success: true };
   } catch (err) {
     console.error("Toggle repo error:", err);
     return { error: "Gagal memperbarui status tracking." };
+  }
+}
+
+export async function savePersonalGithubToken(
+  token: string
+): Promise<{ readonly success?: boolean; readonly error?: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  const cleanToken = token.trim();
+  if (!cleanToken) {
+    return { error: "Token GitHub tidak boleh kosong" };
+  }
+
+  if (!cleanToken.startsWith("ghp_") && !cleanToken.startsWith("github_pat_")) {
+    return { error: "Format token tidak valid. Harus diawali 'ghp_' atau 'github_pat_'" };
+  }
+
+  try {
+    await db.account.upsert({
+      where: {
+        provider_providerAccountId: {
+          provider: "github_pat",
+          providerAccountId: session.user.id,
+        },
+      },
+      create: {
+        userId: session.user.id,
+        type: "personal_access_token",
+        provider: "github_pat",
+        providerAccountId: session.user.id,
+        access_token: cleanToken,
+      },
+      update: {
+        access_token: cleanToken,
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
+    return { success: true };
+  } catch (err) {
+    console.error("Save personal GitHub token error:", err);
+    return { error: "Gagal menyimpan token GitHub." };
+  }
+}
+
+export async function deletePersonalGithubToken(): Promise<{
+  readonly success?: boolean;
+  readonly error?: string;
+}> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  try {
+    await db.account.deleteMany({
+      where: {
+        userId: session.user.id,
+        provider: "github_pat",
+      },
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/dashboard");
+    revalidatePath("/reports");
+    return { success: true };
+  } catch (err) {
+    console.error("Delete personal GitHub token error:", err);
+    return { error: "Gagal menghapus token GitHub." };
   }
 }

@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { RepoCommitGroup, GitHubCommit } from "@/lib/github";
-import { GitCommit, GitBranch, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { GitCommit, GitBranch, ExternalLink, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCommitsPagination } from "@/hooks/use-commits-pagination";
 
 interface CommitsPreviewProps {
   groups: RepoCommitGroup[];
   date: string;
+  trackedRepoCount?: number;
 }
 
 interface FlattenedCommit extends GitHubCommit {
@@ -16,7 +18,11 @@ interface FlattenedCommit extends GitHubCommit {
   branch: string;
 }
 
-export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
+export function CommitsPreview({
+  groups,
+  date,
+  trackedRepoCount = 0,
+}: CommitsPreviewProps) {
   // Flatten and sort commits by date descending
   const allCommits: FlattenedCommit[] = useMemo(() => {
     return groups
@@ -40,14 +46,34 @@ export function CommitsPreview({ groups, date }: CommitsPreviewProps) {
   } = useCommitsPagination(allCommits, 5);
 
   if (totalCommits === 0) {
+    if (trackedRepoCount === 0) {
+      return (
+        <div className="p-6 rounded-md bg-canvas-subtle border border-hairline text-center space-y-3">
+          <GitCommit className="w-8 h-8 text-ink-muted mx-auto" />
+          <div className="text-xs font-semibold text-ink-primary">
+            Belum Ada Repository yang Dihubungkan
+          </div>
+          <p className="text-[11px] text-ink-secondary max-w-sm mx-auto leading-relaxed">
+            Hubungkan repository GitHub Anda di menu Pengaturan agar commit harian dapat diekstrak otomatis sebagai bahan laporan.
+          </p>
+          <Link href="/settings" className="inline-block">
+            <Button variant="secondary" size="sm" className="gap-1.5 text-xs h-8">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Hubungkan Repository</span>
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+
     return (
       <div className="p-6 rounded-md bg-canvas-subtle border border-hairline text-center space-y-2">
         <GitCommit className="w-8 h-8 text-ink-muted mx-auto" />
         <div className="text-xs font-medium text-ink-secondary">
           Belum ada aktivitas commit pada {date}
         </div>
-        <p className="text-[11px] text-ink-muted max-w-sm mx-auto">
-          Commit yang Anda push ke branch yang di-track akan muncul otomatis di sini sebagai bahan laporan harian.
+        <p className="text-[11px] text-ink-muted max-w-sm mx-auto leading-relaxed">
+          Sistem sedang memantau {trackedRepoCount} repository. Commit yang Anda push ke branch yang di-track akan muncul otomatis di sini.
         </p>
       </div>
     );

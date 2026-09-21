@@ -68,7 +68,7 @@ export async function fetchRepoCommits({
   };
 
   if (token) {
-    headers.Authorization = `token ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   let activeBranch = branch;
@@ -158,9 +158,13 @@ export async function fetchAllTrackedCommitsForUser(
     return [];
   }
 
-  // Look for GitHub OAuth access token from user accounts
+  // Look for GitHub OAuth access token or personal access token from user accounts
   const ghAccount = await db.account.findFirst({
-    where: { userId, provider: "github" },
+    where: {
+      userId,
+      provider: { in: ["github", "github_pat"] },
+    },
+    orderBy: { provider: "desc" }, // github_pat takes priority if explicitly provided
   });
   const token = ghAccount?.access_token || process.env.GITHUB_TOKEN;
 
