@@ -392,6 +392,9 @@ export async function savePersonalGithubToken(
   }
 
   try {
+    const encrypted = encrypt(cleanToken);
+    const storedToken = JSON.stringify(encrypted);
+
     await db.account.upsert({
       where: {
         provider_providerAccountId: {
@@ -404,10 +407,10 @@ export async function savePersonalGithubToken(
         type: "personal_access_token",
         provider: "github_pat",
         providerAccountId: session.user.id,
-        access_token: cleanToken,
+        access_token: storedToken,
       },
       update: {
-        access_token: cleanToken,
+        access_token: storedToken,
       },
     });
 

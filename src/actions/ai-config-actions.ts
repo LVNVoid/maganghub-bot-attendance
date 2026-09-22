@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { isSafeUrl } from "@/lib/url-utils";
 import { aiConfigSchema } from "@/schemas/ai-config-schema";
 import {
   saveUserAiConfig,
@@ -96,6 +97,13 @@ export async function testUserAiConfigAction(data?: {
     baseUrl = baseUrl || saved.baseUrl;
     modelName = modelName || saved.modelName;
     apiKey = apiKey || saved.apiKey;
+  }
+
+  if (!isSafeUrl(baseUrl)) {
+    return {
+      success: false,
+      message: "Base URL tidak valid atau mengarah ke alamat lokal/privat yang tidak diizinkan.",
+    };
   }
 
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;

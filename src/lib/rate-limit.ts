@@ -10,12 +10,26 @@ interface RateLimitResult {
 }
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const MAX_STORE_SIZE = 1000;
+
+function cleanupExpiredKeys(now: number): void {
+  for (const [k, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(k);
+    }
+  }
+}
 
 export function checkRateLimit(
   key: string,
   options: RateLimitOptions = { windowMs: 60_000, maxRequests: 30 }
 ): RateLimitResult {
   const now = Date.now();
+
+  if (rateLimitStore.size > MAX_STORE_SIZE) {
+    cleanupExpiredKeys(now);
+  }
+
   const entry = rateLimitStore.get(key);
 
   if (!entry || now > entry.resetTime) {

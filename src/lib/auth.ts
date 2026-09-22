@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -33,6 +34,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .safeParse(credentials);
 
         if (!parsed.success) return null;
+
+        const rateLimitKey = `auth:${parsed.data.email.toLowerCase()}`;
+        const rateCheck = checkRateLimit(rateLimitKey, { windowMs: 60_000, maxRequests: 5 });
+        if (!rateCheck.allowed) {
+          throw new Error("Terlalu banyak percobaan login. Silakan coba 1 menit lagi.");
+        }
 
         const user = await db.user.findUnique({
           where: { email: parsed.data.email },

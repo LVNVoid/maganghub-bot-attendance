@@ -9,13 +9,22 @@ export default async function CalendarPage() {
     redirect("/login");
   }
 
+  // Ambil riwayat laporan dalam rentang 1 tahun terakhir
+  const startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
+  startDate.setHours(0, 0, 0, 0);
+
   const reports = await db.report.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      date: { gte: startDate },
+    },
     select: {
       date: true,
       status: true,
       activity: true,
     },
+    orderBy: { date: "asc" },
   });
 
   const formattedReports: CalendarDayReport[] = reports.map((r) => ({

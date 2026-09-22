@@ -1,5 +1,6 @@
 import axios from "axios";
 import { db } from "@/lib/db";
+import { decrypt } from "@/lib/crypto";
 
 export interface GitHubCommit {
   sha: string;
@@ -257,42 +258,63 @@ export async function fetchAllTrackedCommitsForUser(
     },
     orderBy: { provider: "desc" }, // github_pat takes priority if explicitly provided
   });
-  const token = ghAccount?.access_token || process.env.GITHUB_TOKEN;
 
-  const results: RepoCommitGroup[] = [];
-
-  for (const r of trackedRepos) {
-    const [owner, repo] = r.repoFullName.split("/");
-    if (!owner || !repo) continue;
-
+  let token = process.env.GITHUB_TOKEN;
+  if (ghAccount?.access_token) {
     try {
-      const { commits, detectedBranch } = await fetchRepoCommits({
-        owner,
-        repo,
-        branch: r.branch,
-        date,
-        token,
-      });
-
-      // Update repo branch in DB if auto-detected different branch
-      if (detectedBranch !== r.branch) {
-        await db.githubRepo.update({
-          where: { id: r.id },
-          data: { branch: detectedBranch },
-        });
+      const parsed = JSON.parse(ghAccount.access_token);
+      if (parsed.ciphertext && parsed.iv && parsed.authTag) {
+        token = decrypt(parsed.ciphertext, parsed.iv, parsed.authTag);
+      } else {
+        token = ghAccount.access_token;
       }
-
-      if (commits.length > 0) {
-        results.push({
-          repoFullName: r.repoFullName,
-          branch: detectedBranch,
-          commits,
-        });
-      }
-    } catch (err) {
-      console.warn(`Could not fetch commits for ${r.repoFullName}:`, err);
+    } catch {
+      token = ghAccount.access_token;
     }
   }
 
-  return results;
+  const results = await Promise.allSettled(
+    trackedRepos.map(async (r) => {
+      const [owner, repo] = r.repoFullName.split("/");
+      if (!owner || !repo) return null;
+
+      try {
+        const { commits, detectedBranch } = await fetchRepoCommits({
+          owner,
+          repo,
+          branch: r.branch,
+          date,
+          token,
+        });
+
+        // Update repo branch in DB if auto-detected different branch
+        if (detectedBranch !== r.branch) {
+          await db.githubRepo.update({
+            where: { id: r.id },
+            data: { branch: detectedBranch },
+          });
+        }
+
+        if (commits.length > 0) {
+          return {
+            repoFullName: r.repoFullName,
+            branch: detectedBranch,
+            commits,
+          };
+        }
+        return null;
+      } catch (err) {
+        console.warn(`Could not fetch commits for ${r.repoFullName}:`, err);
+        return null;
+      }
+    })
+  );
+
+  return results
+    .filter(
+      (res): res is PromiseFulfilledResult<RepoCommitGroup | null> =>
+        res.status === "fulfilled"
+    )
+    .map((res) => res.value)
+    .filter((item): item is RepoCommitGroup => item !== null);
 }

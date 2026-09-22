@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter").max(100),
@@ -25,6 +26,12 @@ export async function registerUser(formData: FormData) {
   }
 
   const { name, email, password } = parsed.data;
+
+  const rateLimitKey = `register:${email}`;
+  const rateCheck = checkRateLimit(rateLimitKey, { windowMs: 60_000, maxRequests: 3 });
+  if (!rateCheck.allowed) {
+    return { error: "Terlalu banyak percobaan pendaftaran. Silakan coba lagi nanti." };
+  }
 
   try {
     const existing = await db.user.findUnique({

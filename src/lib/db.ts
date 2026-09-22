@@ -12,7 +12,7 @@ const connectionString =
 const adapter = new PrismaPg({
   connectionString,
   connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 300000,
+  idleTimeoutMillis: 30000,
 });
 
 export const db =
@@ -25,6 +25,4 @@ export const db =
         : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
-}
+globalForPrisma.prisma = db;

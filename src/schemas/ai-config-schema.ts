@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { isSafeUrl } from "@/lib/url-utils";
 
 export const aiConfigSchema = z.object({
   provider: z.string().default("openai_compatible"),
   baseUrl: z
     .string()
-    .url("Base URL harus berupa URL valid (contoh: https://api.groq.com/openai/v1)"),
+    .url("Base URL harus berupa URL valid (contoh: https://api.groq.com/openai/v1)")
+    .refine(isSafeUrl, "Base URL tidak diizinkan mengarah ke alamat lokal atau privat."),
   modelName: z
     .string()
     .min(1, "Nama model tidak boleh kosong (contoh: llama-3.3-70b-versatile)"),
@@ -14,7 +16,10 @@ export const aiConfigSchema = z.object({
 export type AiConfigInput = z.infer<typeof aiConfigSchema>;
 
 export const testAiConfigSchema = z.object({
-  baseUrl: z.string().url("Base URL tidak valid"),
+  baseUrl: z
+    .string()
+    .url("Base URL tidak valid")
+    .refine(isSafeUrl, "Base URL tidak diizinkan mengarah ke alamat lokal atau privat."),
   modelName: z.string().min(1, "Nama model wajib diisi"),
   apiKey: z.string().optional(),
 });
