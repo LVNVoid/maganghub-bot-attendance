@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
@@ -7,8 +8,41 @@ import { CommitsPreview } from "@/components/commits-preview";
 import { SubmitLogsFeed } from "@/components/submit-logs-feed";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
 import { getTodayJakartaStr } from "@/lib/date-utils";
-import { getUserAiConfig } from "@/services/ai-config-service";
 import { FileCheck, Activity, KeyRound, Cpu, Sparkles, AlertCircle } from "lucide-react";
+
+function CommitsSkeleton() {
+  return (
+    <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-5 space-y-3 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-4 bg-surface rounded w-36" />
+        <div className="h-3 bg-surface rounded w-24" />
+      </div>
+      <div className="space-y-2 pt-1">
+        <div className="h-16 bg-canvas-deep rounded-xs border border-hairline" />
+        <div className="h-16 bg-canvas-deep rounded-xs border border-hairline" />
+      </div>
+    </div>
+  );
+}
+
+async function CommitsSection({
+  userId,
+  date,
+  trackedRepoCount,
+}: {
+  userId: string;
+  date: string;
+  trackedRepoCount: number;
+}) {
+  const commitsGroups = await fetchAllTrackedCommitsForUser(userId, date);
+  return (
+    <CommitsPreview
+      groups={commitsGroups}
+      date={date}
+      trackedRepoCount={trackedRepoCount}
+    />
+  );
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -20,22 +54,23 @@ export default async function DashboardPage() {
   const todayStr = getTodayJakartaStr();
   const todayDateObj = new Date(todayStr);
 
-  // Parallel data fetching
+  // Parallel database queries with projection
   const [
     credential,
     automation,
     totalSubmitted,
     todayReport,
-    commitsGroups,
     recentLogs,
     aiConfig,
     trackedRepoCount,
   ] = await Promise.all([
     db.maganghubCredential.findUnique({
       where: { userId },
+      select: { status: true },
     }),
     db.automationConfig.findUnique({
       where: { userId },
+      select: { isEnabled: true, scheduleTime: true },
     }),
     db.report.count({
       where: { userId, status: "SUBMITTED" },
@@ -47,14 +82,24 @@ export default async function DashboardPage() {
           date: todayDateObj,
         },
       },
+      select: { status: true },
     }),
-    fetchAllTrackedCommitsForUser(userId, todayStr),
     db.submitLog.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: 6,
+      select: {
+        id: true,
+        status: true,
+        message: true,
+        triggeredBy: true,
+        createdAt: true,
+      },
     }),
-    getUserAiConfig(userId),
+    db.userAiConfig.findUnique({
+      where: { userId },
+      select: { modelName: true },
+    }),
     db.githubRepo.count({
       where: { userId, isActive: true },
     }),
@@ -202,7 +247,13 @@ export default async function DashboardPage() {
 
       {/* Grid: Commits Preview + Recent Logs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CommitsPreview groups={commitsGroups} date={todayStr} trackedRepoCount={trackedRepoCount} />
+        <Suspense fallback={<CommitsSkeleton />}>
+          <CommitsSection
+            userId={userId}
+            date={todayStr}
+            trackedRepoCount={trackedRepoCount}
+          />
+        </Suspense>
         <SubmitLogsFeed logs={recentLogs} />
       </div>
     </div>
