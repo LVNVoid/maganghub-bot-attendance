@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { executeUserDailySubmit } from "@/lib/submit-orchestrator";
-import { getTodayJakartaStr } from "@/lib/date-utils";
+import { getTodayJakartaStr, isScheduledDay } from "@/lib/date-utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
@@ -59,7 +59,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Eksekusi submit harian untuk user tersebut
+    // 2. Periksa apakah hari ini dijadwalkan untuk submit
+    const scheduledDays = config.scheduleDays || "1,2,3,4,5,6";
+    const todayJakarta = getTodayJakartaStr();
+    if (!isScheduledDay(scheduledDays, todayJakarta)) {
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        message: `Eksekusi dilewati: hari ini (${todayJakarta}) tidak termasuk dalam jadwal absensi (${scheduledDays}).`,
+        user: config.user.name || config.user.email,
+        date: todayJakarta,
+      });
+    }
+
+    // 3. Eksekusi submit harian untuk user tersebut
     const result = await executeUserDailySubmit(config.userId, "CRON_WEBHOOK");
 
     return NextResponse.json({

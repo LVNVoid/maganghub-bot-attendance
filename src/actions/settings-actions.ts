@@ -233,14 +233,15 @@ export async function updateAutomationPreferences(
 
   const raw = {
     scheduleTime: formData.get("scheduleTime"),
+    scheduleDays: formData.get("scheduleDays"),
   };
 
   const parsed = updateAutomationPreferencesSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || "Format waktu tidak valid" };
+    return { error: parsed.error.issues[0]?.message || "Format data tidak valid" };
   }
 
-  const { scheduleTime } = parsed.data;
+  const { scheduleTime, scheduleDays } = parsed.data;
 
   try {
     await db.automationConfig.upsert({
@@ -248,10 +249,12 @@ export async function updateAutomationPreferences(
       create: {
         userId: session.user.id,
         scheduleTime,
+        scheduleDays,
         webhookKey: crypto.randomBytes(24).toString("hex"),
       },
       update: {
         scheduleTime,
+        scheduleDays,
       },
     });
 

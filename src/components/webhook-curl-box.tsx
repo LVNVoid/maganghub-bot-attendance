@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Copy, Check, RefreshCw, Terminal, Clock } from "lucide-react";
 import { regenerateWebhookKey } from "@/actions/settings-actions";
+import { formatScheduleDays } from "@/lib/date-utils";
 
 interface WebhookCurlBoxProps {
   webhookKey: string;
   autoSubmitTime?: string;
+  scheduleDays?: string;
 }
 
 export function WebhookCurlBox({
   webhookKey,
   autoSubmitTime = "14:00",
+  scheduleDays = "1,2,3,4,5,6",
 }: WebhookCurlBoxProps) {
   const [currentKey, setCurrentKey] = useState(webhookKey);
   const [copied, setCopied] = useState(false);
@@ -34,8 +37,10 @@ export function WebhookCurlBox({
   const utcHourStr = utcHour.toString().padStart(2, "0");
   const utcMinuteStr = utcMinute.toString().padStart(2, "0");
 
-  const cronWib = `${wibMinute} ${wibHour} * * 1-6`;
-  const cronUtc = `${utcMinute} ${utcHour} * * 1-6`;
+  const { cronDays, label: daysLabel } = formatScheduleDays(scheduleDays);
+
+  const cronWib = `${wibMinute} ${wibHour} * * ${cronDays}`;
+  const cronUtc = `${utcMinute} ${utcHour} * * ${cronDays}`;
 
   const baseUrl =
     typeof window !== "undefined"
@@ -47,11 +52,11 @@ export function WebhookCurlBox({
 
   const singleLineCurl = `curl -s -X POST ${baseUrl}/api/cron/trigger -H "Authorization: Bearer ${currentKey}"`;
 
-  const crontabSnippetWib = `# MagangHub Bot: Setiap Senin-Sabtu jam ${autoSubmitTime} WIB
+  const crontabSnippetWib = `# MagangHub Bot: Setiap ${daysLabel} jam ${autoSubmitTime} WIB
 CRON_TZ=Asia/Jakarta
 ${cronWib} ${singleLineCurl} >> /var/log/maganghub.log 2>&1`;
 
-  const crontabSnippetUtc = `# MagangHub Bot: Jam ${utcHourStr}:${utcMinuteStr} UTC (= ${autoSubmitTime} WIB) Senin-Sabtu
+  const crontabSnippetUtc = `# MagangHub Bot: Jam ${utcHourStr}:${utcMinuteStr} UTC (= ${autoSubmitTime} WIB) ${daysLabel}
 ${cronUtc} ${singleLineCurl} >> /var/log/maganghub.log 2>&1`;
 
   const activeCronSnippet = tzMode === "wib" ? crontabSnippetWib : crontabSnippetUtc;

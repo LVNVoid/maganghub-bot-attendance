@@ -50,6 +50,7 @@ export async function updateAutomationConfig(
   data: {
     isEnabled?: boolean;
     scheduleTime?: string;
+    scheduleDays?: string;
     autoGenerate?: boolean;
     webhookKey?: string;
   }
@@ -61,6 +62,7 @@ export async function updateAutomationConfig(
       userId,
       isEnabled: data.isEnabled ?? false,
       scheduleTime: data.scheduleTime ?? "13:50",
+      scheduleDays: data.scheduleDays ?? "1,2,3,4,5,6",
       autoGenerate: data.autoGenerate ?? true,
       webhookKey: data.webhookKey,
     },

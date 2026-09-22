@@ -5,22 +5,67 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { WebhookCurlBox } from "@/components/webhook-curl-box";
 import { toggleAutomation, updateAutomationPreferences } from "@/actions/settings-actions";
-import { Cpu, Clock } from "lucide-react";
+import { Cpu, Clock, Calendar } from "lucide-react";
 
 interface AutomationConfigCardProps {
   isEnabled: boolean;
   webhookKey: string;
   scheduleTime?: string;
+  scheduleDays?: string;
+}
+
+const DAYS_OF_WEEK = [
+  { id: 1, name: "Senin", short: "Sen" },
+  { id: 2, name: "Selasa", short: "Sel" },
+  { id: 3, name: "Rabu", short: "Rab" },
+  { id: 4, name: "Kamis", short: "Kam" },
+  { id: 5, name: "Jumat", short: "Jum" },
+  { id: 6, name: "Sabtu", short: "Sab" },
+  { id: 0, name: "Minggu", short: "Min" },
+];
+
+function parseDays(daysStr: string): number[] {
+  const parsed = daysStr
+    .split(",")
+    .map((d) => parseInt(d.trim(), 10))
+    .filter((n) => !isNaN(n) && n >= 0 && n <= 6);
+  return parsed.length > 0 ? parsed : [1, 2, 3, 4, 5, 6];
 }
 
 export function AutomationConfigCard({
   isEnabled: initialEnabled,
   webhookKey,
   scheduleTime = "13:50",
+  scheduleDays = "1,2,3,4,5,6",
 }: AutomationConfigCardProps) {
   const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const [toggling, setToggling] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>(() =>
+    parseDays(scheduleDays)
+  );
+
+  const toggleDay = (dayId: number) => {
+    setSelectedDays((prev) => {
+      if (prev.includes(dayId)) {
+        if (prev.length <= 1) {
+          toast.error("Pilih minimal satu hari untuk jadwal absen.");
+          return prev;
+        }
+        return prev.filter((d) => d !== dayId);
+      } else {
+        return [...prev, dayId].sort((a, b) => {
+          const orderA = a === 0 ? 7 : a;
+          const orderB = b === 0 ? 7 : b;
+          return orderA - orderB;
+        });
+      }
+    });
+  };
+
+  const applyPreset = (preset: number[]) => {
+    setSelectedDays(preset);
+  };
 
   const handleToggle = async () => {
     setToggling(true);
@@ -37,14 +82,20 @@ export function AutomationConfigCard({
 
   const handleSavePreferences = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSaving(true);
+    if (selectedDays.length === 0) {
+      toast.error("Pilih minimal satu hari.");
+      return;
+    }
 
+    setSaving(true);
     const formData = new FormData(e.currentTarget);
+    formData.set("scheduleDays", selectedDays.join(","));
+
     const res = await updateAutomationPreferences(formData);
     if (res?.success) {
-      toast.success("Preferensi waktu submit berhasil disimpan.");
+      toast.success("Preferensi waktu dan hari submit berhasil disimpan.");
     } else {
-      toast.error("Gagal menyimpan preferensi waktu submit.");
+      toast.error(res?.error || "Gagal menyimpan preferensi waktu submit.");
     }
     setSaving(false);
   };
@@ -140,21 +191,87 @@ export function AutomationConfigCard({
       </div>
 
       {/* Preferences Form */}
-      <form onSubmit={handleSavePreferences} className="pt-2 border-t border-hairline space-y-4">
-        <div className="space-y-1.5 max-w-xs">
-          <label className="text-xs font-medium text-ink-secondary flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            Target Waktu Submit Harian (WIB)
-          </label>
-          <input
-            name="scheduleTime"
-            type="time"
-            defaultValue={scheduleTime}
-            className="w-full bg-canvas-deep border border-hairline rounded-sm px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-primary"
-          />
+      <form onSubmit={handleSavePreferences} className="pt-2 border-t border-hairline space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Target Waktu */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-ink-secondary flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-primary" />
+              Target Waktu Submit Harian (WIB)
+            </label>
+            <input
+              name="scheduleTime"
+              type="time"
+              defaultValue={scheduleTime}
+              className="w-full bg-canvas-deep border border-hairline rounded-sm px-3 py-2 text-xs text-ink-primary focus:outline-none focus:border-primary"
+            />
+            <p className="text-[11px] text-ink-muted">
+              Waktu acuan eksekusi bot atau cron trigger harian.
+            </p>
+          </div>
+
+          {/* Hari Absen */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-ink-secondary flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
+                Hari Kerja / Jadwal Absen
+              </label>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => applyPreset([1, 2, 3, 4, 5])}
+                  className="px-1.5 py-0.5 rounded-xs bg-canvas border border-hairline hover:border-hairline-prominent text-ink-secondary hover:text-ink-primary transition-colors"
+                >
+                  Sen-Jum
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset([1, 2, 3, 4, 5, 6])}
+                  className="px-1.5 py-0.5 rounded-xs bg-canvas border border-hairline hover:border-hairline-prominent text-ink-secondary hover:text-ink-primary transition-colors"
+                >
+                  Sen-Sab
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset([1, 2, 3, 4, 5, 6, 0])}
+                  className="px-1.5 py-0.5 rounded-xs bg-canvas border border-hairline hover:border-hairline-prominent text-ink-secondary hover:text-ink-primary transition-colors"
+                >
+                  Semua
+                </button>
+              </div>
+            </div>
+
+            {/* Day Selector Buttons */}
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {DAYS_OF_WEEK.map((day) => {
+                const isSelected = selectedDays.includes(day.id);
+                return (
+                  <button
+                    key={day.id}
+                    type="button"
+                    onClick={() => toggleDay(day.id)}
+                    className={`min-h-[44px] flex flex-col items-center justify-center rounded-sm border text-xs transition-all ${
+                      isSelected
+                        ? "bg-primary text-white font-semibold border-primary shadow-xs"
+                        : "bg-canvas-deep border-hairline text-ink-secondary hover:border-hairline-prominent hover:text-ink-primary"
+                    }`}
+                    title={day.name}
+                  >
+                    <span className="text-[11px] sm:text-xs font-medium">{day.short}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-ink-muted">
+              Pilih hari aktif kerja magang. Bot akan melewati (skip) proses submit otomatis di luar hari yang dipilih.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end pt-1">
           <Button type="submit" variant="secondary" size="sm" disabled={saving}>
             {saving ? "Menyimpan..." : "Simpan Preferensi"}
           </Button>
@@ -167,6 +284,7 @@ export function AutomationConfigCard({
           <WebhookCurlBox
             webhookKey={webhookKey}
             autoSubmitTime={scheduleTime}
+            scheduleDays={selectedDays.join(",")}
           />
         </div>
       )}
