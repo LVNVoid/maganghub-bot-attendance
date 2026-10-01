@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import { ToasterProvider } from "@/components/toaster-provider";
+import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,6 +26,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${inter.className} font-sans antialiased bg-canvas text-ink-primary min-h-screen`}
       >
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <ToasterProvider />
         {children}
       </body>
