@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getReportByDate, getUserReports } from "@/services/report-service";
+import { getReportByDate, getRecentReports } from "@/services/report-service";
 import { getUserAiConfig } from "@/services/ai-config-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -22,14 +22,12 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const resolvedParams = await searchParams;
   const targetDateStr = resolvedParams.date || getTodayJakartaStr();
 
-  // Fetch report for target date, recent reports, and user AI config in parallel
-  const [targetReport, allReports, userAi] = await Promise.all([
+  // Fetch report for target date, recent reports (limit 5), and user AI config in parallel
+  const [targetReport, recentReports, userAi] = await Promise.all([
     getReportByDate(userId, targetDateStr),
-    getUserReports(userId),
+    getRecentReports(userId, 5),
     getUserAiConfig(userId),
   ]);
-
-  const recentReports = allReports.slice(0, 5);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

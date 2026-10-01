@@ -19,6 +19,64 @@ export async function getUserReports(userId: string): Promise<ReportItem[]> {
   }));
 }
 
+export async function getRecentReports(
+  userId: string,
+  limit = 5
+): Promise<ReportItem[]> {
+  const reports = await db.report.findMany({
+    where: { userId },
+    orderBy: { date: "desc" },
+    take: limit,
+  });
+
+  return reports.map((r) => ({
+    id: r.id,
+    date: r.date.toISOString().split("T")[0],
+    activity: r.activity,
+    learning: r.learning,
+    obstacles: r.obstacles,
+    status: r.status as ReportItem["status"],
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  }));
+}
+
+export interface CalendarReportItem {
+  date: string;
+  status: "DRAFT" | "READY" | "SUBMITTED" | "FAILED";
+}
+
+export async function getCalendarReports(
+  userId: string,
+  startDate?: Date
+): Promise<CalendarReportItem[]> {
+  const filterDate =
+    startDate ??
+    (() => {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() - 1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
+
+  const reports = await db.report.findMany({
+    where: {
+      userId,
+      date: { gte: filterDate },
+    },
+    select: {
+      date: true,
+      status: true,
+    },
+    orderBy: { date: "asc" },
+  });
+
+  return reports.map((r) => ({
+    date: r.date.toISOString().split("T")[0],
+    status: r.status as CalendarReportItem["status"],
+  }));
+}
+
 export async function getReportByDate(
   userId: string,
   dateStr: string

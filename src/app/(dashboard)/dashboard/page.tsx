@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getDashboardMetrics } from "@/services/dashboard-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { QuickSubmitCard } from "@/components/quick-submit-card";
@@ -52,10 +52,8 @@ export default async function DashboardPage() {
 
   const userId = session.user.id;
   const todayStr = getTodayJakartaStr();
-  const todayDateObj = new Date(todayStr);
 
-  // Parallel database queries with projection
-  const [
+  const {
     credential,
     automation,
     totalSubmitted,
@@ -63,47 +61,7 @@ export default async function DashboardPage() {
     recentLogs,
     aiConfig,
     trackedRepoCount,
-  ] = await Promise.all([
-    db.maganghubCredential.findUnique({
-      where: { userId },
-      select: { status: true },
-    }),
-    db.automationConfig.findUnique({
-      where: { userId },
-      select: { isEnabled: true, scheduleTime: true },
-    }),
-    db.report.count({
-      where: { userId, status: "SUBMITTED" },
-    }),
-    db.report.findUnique({
-      where: {
-        userId_date: {
-          userId,
-          date: todayDateObj,
-        },
-      },
-      select: { status: true },
-    }),
-    db.submitLog.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-      select: {
-        id: true,
-        status: true,
-        message: true,
-        triggeredBy: true,
-        createdAt: true,
-      },
-    }),
-    db.userAiConfig.findUnique({
-      where: { userId },
-      select: { modelName: true },
-    }),
-    db.githubRepo.count({
-      where: { userId, isActive: true },
-    }),
-  ]);
+  } = await getDashboardMetrics(userId, todayStr);
 
   return (
     <div className="space-y-8">

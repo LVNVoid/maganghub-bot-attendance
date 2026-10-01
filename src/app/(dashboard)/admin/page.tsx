@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getAdminOverview } from "@/services/admin-service";
 import { redirect } from "next/navigation";
 import { Users, FileCheck, ShieldAlert, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -14,48 +14,14 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  // Fetch all users with their credentials, automation configs, and latest submit logs in parallel
-  const [users, totalReports, totalLogs, todayReportsCount, successLogsCount] =
-    await Promise.all([
-      db.user.findMany({
-        include: {
-          maganghubCred: {
-            select: {
-              status: true,
-              lastCheckedAt: true,
-            },
-          },
-          automation: {
-            select: {
-              isEnabled: true,
-              scheduleTime: true,
-            },
-          },
-          _count: {
-            select: {
-              reports: true,
-              submitLogs: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      db.report.count({
-        where: { status: "SUBMITTED" },
-      }),
-      db.submitLog.count(),
-      db.report.count({
-        where: {
-          date: new Date(new Date().toISOString().split("T")[0]),
-          status: "SUBMITTED",
-        },
-      }),
-      db.submitLog.count({
-        where: { status: "SUCCESS" },
-      }),
-    ]);
-
-  const successRate = totalLogs > 0 ? Math.round((successLogsCount / totalLogs) * 100) : 100;
+  const {
+    users,
+    totalReports,
+    totalLogs,
+    todayReportsCount,
+    successLogsCount,
+    successRate,
+  } = await getAdminOverview();
 
   return (
     <div className="space-y-6 sm:space-y-8">

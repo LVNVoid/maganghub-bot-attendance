@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getCalendarReports } from "@/services/report-service";
 import { redirect } from "next/navigation";
-import { CalendarGrid, CalendarDayReport } from "@/components/calendar-grid";
+import { CalendarGrid } from "@/components/calendar-grid";
 
 export default async function CalendarPage() {
   const session = await auth();
@@ -9,29 +9,7 @@ export default async function CalendarPage() {
     redirect("/login");
   }
 
-  // Ambil riwayat laporan dalam rentang 1 tahun terakhir
-  const startDate = new Date();
-  startDate.setFullYear(startDate.getFullYear() - 1);
-  startDate.setHours(0, 0, 0, 0);
-
-  const reports = await db.report.findMany({
-    where: {
-      userId: session.user.id,
-      date: { gte: startDate },
-    },
-    select: {
-      date: true,
-      status: true,
-      activity: true,
-    },
-    orderBy: { date: "asc" },
-  });
-
-  const formattedReports: CalendarDayReport[] = reports.map((r) => ({
-    date: r.date.toISOString().split("T")[0],
-    status: r.status as CalendarDayReport["status"],
-    activity: r.activity,
-  }));
+  const formattedReports = await getCalendarReports(session.user.id);
 
   return (
     <div className="space-y-8">
