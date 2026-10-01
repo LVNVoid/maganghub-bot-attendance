@@ -7,19 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { generateReportDraft, saveReportDraft } from "@/actions/report-actions";
+import type { ReportItem } from "@/schemas/report-schema";
 import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2, Lock } from "lucide-react";
 
-interface ReportData {
-  id?: string;
-  date: string;
-  activity: string;
-  learning: string;
-  obstacles: string;
-  status?: string;
-}
+export type ReportFormData = Partial<ReportItem>;
 
 interface ReportFormProps {
-  initialReport?: ReportData | null;
+  initialReport?: ReportFormData | null;
   selectedDate: string;
   onDateChange?: (date: string) => void;
   aiConfig?: {
