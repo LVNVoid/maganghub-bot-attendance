@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -20,17 +20,40 @@ import {
   Edit3,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   Eye,
   Lock,
+  Calendar,
+  X,
+  FileCheck,
+  FileEdit,
+  GitBranch,
 } from "lucide-react";
 
 export type { ReportItem };
 
 interface ReportHistoryTableProps {
   reports: readonly ReportItem[];
+}
+
+function formatDisplayDate(dateStr: string) {
+  if (!dateStr) return { formatted: "-", day: "" };
+  try {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length !== 3) return { formatted: dateStr, day: "" };
+    const [y, m, d] = parts;
+    const dateObj = new Date(y, m - 1, d);
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+    ];
+    const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const formatted = `${String(d).padStart(2, "0")} ${months[m - 1]} ${y}`;
+    const day = days[dateObj.getDay()] || "";
+    return { formatted, day };
+  } catch {
+    return { formatted: dateStr, day: "" };
+  }
 }
 
 export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
@@ -48,8 +71,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
     setStatusFilter,
     currentPage,
     setCurrentPage,
-    expandedId,
-    toggleExpand,
     paginatedReports,
     totalPages,
     totalItems,
@@ -57,12 +78,23 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
 
   const startIndex = (currentPage - 1) * PAGE_SIZE;
 
+  // KPI Counts
+  const counts = useMemo(() => {
+    let submitted = 0;
+    let draft = 0;
+    for (const r of reports) {
+      if (r.status === "SUBMITTED") submitted++;
+      else if (r.status === "DRAFT") draft++;
+    }
+    return { total: reports.length, submitted, draft };
+  }, [reports]);
+
   const confirmDelete = async () => {
     if (!reportToDelete) return;
     const target = reportToDelete;
 
     if (target.status === "SUBMITTED") {
-      toast.error("Laporan yang sudah berstatus SUBMITTED tidak dapat dihapus.");
+      toast.error("Laporan yang sudah tersubmit ke Monev tidak dapat dihapus.");
       setReportToDelete(null);
       return;
     }
@@ -83,24 +115,30 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
     });
   };
 
-  const getStatusBadge = (status: string, dateStr: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "SUBMITTED":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-soft text-primary border border-primary/20">
-            <CheckCircle2 className="w-3 h-3" /> Submitted
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-primary-soft text-primary border border-primary/20 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Submitted</span>
           </span>
         );
       case "FAILED":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-error/10 text-error border border-error/20">
-            <AlertCircle className="w-3 h-3" /> Gagal
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-error/10 text-error border border-error/20 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-error" />
+            <AlertCircle className="w-3 h-3" />
+            <span>Gagal</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface text-ink-secondary border border-hairline">
-            <Clock className="w-3 h-3 text-ink-muted" /> Draft
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-surface-elevated text-ink-secondary border border-hairline shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-ink-muted" />
+            <Clock className="w-3 h-3 text-ink-muted" />
+            <span>Draft</span>
           </span>
         );
     }
@@ -108,8 +146,47 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* Quick Summary Cards (Situational Awareness) */}
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] sm:text-xs text-ink-muted font-medium">Total Laporan</p>
+            <p className="text-base sm:text-xl font-mono font-semibold text-ink-primary mt-0.5">
+              {counts.total}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-sm bg-canvas-deep border border-hairline flex items-center justify-center text-ink-secondary">
+            <Calendar className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] sm:text-xs text-ink-muted font-medium">Tersubmit Monev</p>
+            <p className="text-base sm:text-xl font-mono font-semibold text-primary mt-0.5">
+              {counts.submitted}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <FileCheck className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] sm:text-xs text-ink-muted font-medium">Draft Tersimpan</p>
+            <p className="text-base sm:text-xl font-mono font-semibold text-ink-secondary mt-0.5">
+              {counts.draft}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-sm bg-canvas-deep border border-hairline flex items-center justify-center text-ink-muted">
+            <FileEdit className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-3.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-canvas-subtle border border-hairline rounded-md p-2.5 sm:p-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
           <Input
@@ -120,68 +197,144 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="pl-8 text-xs h-9 sm:h-8"
+            className="pl-8 pr-8 text-xs h-9 sm:h-8 bg-canvas-deep border-hairline text-ink-primary placeholder:text-ink-muted focus:border-primary"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-primary p-0.5"
+              title="Bersihkan pencarian"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center justify-between sm:justify-start gap-2">
-          <span className="text-xs text-ink-secondary shrink-0">Filter Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("ALL");
               setCurrentPage(1);
             }}
-            className="text-xs h-9 sm:h-8 px-2.5 rounded-xs bg-canvas-deep border border-hairline text-ink-primary focus:outline-none focus:border-primary flex-1 sm:flex-initial"
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              statusFilter === "ALL"
+                ? "bg-primary text-canvas-deep font-semibold"
+                : "bg-canvas-deep text-ink-secondary hover:text-ink-primary border border-hairline"
+            }`}
           >
-            <option value="ALL">Semua Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="FAILED">Gagal</option>
-          </select>
+            Semua ({counts.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("SUBMITTED");
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              statusFilter === "SUBMITTED"
+                ? "bg-primary text-canvas-deep font-semibold"
+                : "bg-canvas-deep text-ink-secondary hover:text-ink-primary border border-hairline"
+            }`}
+          >
+            Submitted ({counts.submitted})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("DRAFT");
+              setCurrentPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              statusFilter === "DRAFT"
+                ? "bg-primary text-canvas-deep font-semibold"
+                : "bg-canvas-deep text-ink-secondary hover:text-ink-primary border border-hairline"
+            }`}
+          >
+            Draft ({counts.draft})
+          </button>
         </div>
       </div>
 
-      {/* Table Container */}
+      {/* Main Container */}
       <div className="bg-canvas-subtle border border-hairline rounded-md overflow-hidden">
         {paginatedReports.length === 0 ? (
-          <div className="text-center py-12 text-xs text-ink-muted space-y-2">
-            <Clock className="w-8 h-8 text-ink-muted mx-auto" />
-            <p>Tidak ada data laporan yang sesuai dengan kriteria filter.</p>
+          <div className="text-center py-16 px-4 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-canvas-deep border border-hairline flex items-center justify-center mx-auto text-ink-muted">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink-primary">Tidak ada laporan ditemukan</p>
+              <p className="text-xs text-ink-muted mt-1 max-w-sm mx-auto">
+                {searchQuery || statusFilter !== "ALL"
+                  ? "Coba ubah kata kunci pencarian atau sesuaikan filter status."
+                  : "Mulai buat laporan harian baru menggunakan tombol Editor Laporan Baru di atas."}
+              </p>
+            </div>
+            {(searchQuery || statusFilter !== "ALL") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("ALL");
+                  setCurrentPage(1);
+                }}
+                className="text-xs h-8"
+              >
+                Reset Filter
+              </Button>
+            )}
           </div>
         ) : (
           <>
-            {/* Mobile Stacked Card View (< sm) */}
+            {/* Mobile View (< sm) */}
             <div className="block sm:hidden divide-y divide-hairline">
               {paginatedReports.map((r) => {
+                const dateInfo = formatDisplayDate(r.date);
                 const isDeleting = deletingId === r.id || isPending;
                 const canDelete = r.status !== "SUBMITTED";
                 const isSubmitted = r.status === "SUBMITTED";
 
                 return (
-                  <div key={r.id} className="p-4 space-y-3 bg-canvas-subtle">
+                  <div
+                    key={r.id}
+                    className="p-3.5 space-y-3 bg-canvas-subtle hover:bg-canvas-deep/40 transition-colors"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-semibold text-ink-primary">
-                          {r.date}
+                          {dateInfo.formatted}
                         </span>
-                        {getStatusBadge(r.status, r.date)}
+                        <span className="text-[11px] text-ink-muted">
+                          • {dateInfo.day}
+                        </span>
                       </div>
-                      <span className="font-mono text-[10px] text-ink-muted px-1.5 py-0.5 rounded-xs bg-canvas-deep border border-hairline">
-                        {r.sourceType}
-                      </span>
+                      {getStatusBadge(r.status)}
                     </div>
 
                     <div
                       onClick={() => setSelectedReportForModal(r)}
-                      className="cursor-pointer group rounded-xs bg-canvas-deep p-3 border border-hairline hover:border-primary/40 transition-colors"
+                      className="cursor-pointer rounded-sm bg-canvas-deep p-3 border border-hairline hover:border-primary/40 transition-colors"
                     >
-                      <p className="font-sans text-xs text-ink-secondary leading-relaxed line-clamp-2 group-hover:text-ink-primary transition-colors">
+                      <p className="text-xs text-ink-secondary leading-relaxed line-clamp-2">
                         {r.activity}
                       </p>
-                      <div className="mt-2 flex items-center gap-1 text-[11px] text-primary font-medium">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Baca Ringkasan Lengkap</span>
+                      <div className="mt-2 flex items-center justify-between text-[11px]">
+                        <span className="text-primary font-medium flex items-center gap-1">
+                          <Eye className="w-3.5 h-3.5" />
+                          Baca Laporan Lengkap
+                        </span>
+                        {r.sourceType && (
+                          <span className="text-ink-muted font-mono text-[10px] flex items-center gap-1">
+                            <GitBranch className="w-3 h-3" />
+                            {r.sourceType}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -191,40 +344,34 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setSelectedReportForModal(r)}
-                        className="h-8 px-2.5 text-xs text-ink-secondary gap-1"
+                        className="h-8 px-2 text-xs text-ink-secondary gap-1"
                       >
                         <Eye className="w-3.5 h-3.5 text-primary" />
                         <span>Detail</span>
                       </Button>
 
-                      <div className="flex items-center gap-2">
-                        {isSubmitted ? (
-                          <Link href={`/reports?date=${r.date}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2.5 text-xs gap-1 border-hairline text-ink-secondary"
-                              title="Buka Laporan (Read-Only)"
-                            >
-                              <Lock className="w-3 h-3 text-primary" />
-                              <span>Buka</span>
-                            </Button>
-                          </Link>
-                        ) : (
-                          <Link href={`/reports?date=${r.date}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2.5 text-xs gap-1"
-                              title="Edit Laporan di Editor"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>Edit</span>
-                            </Button>
-                          </Link>
-                        )}
+                      <div className="flex items-center gap-1.5">
+                        <Link href={`/reports?date=${r.date}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1"
+                          >
+                            {isSubmitted ? (
+                              <>
+                                <Lock className="w-3 h-3 text-primary" />
+                                <span>Buka</span>
+                              </>
+                            ) : (
+                              <>
+                                <Edit3 className="w-3 h-3" />
+                                <span>Edit</span>
+                              </>
+                            )}
+                          </Button>
+                        </Link>
 
-                        {canDelete ? (
+                        {canDelete && (
                           <Button
                             type="button"
                             variant="destructive"
@@ -232,7 +379,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                             disabled={isDeleting}
                             onClick={() => setReportToDelete(r)}
                             className="h-8 px-2.5 text-xs gap-1"
-                            title="Hapus laporan ini"
                           >
                             {isDeleting ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -241,13 +387,6 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                             )}
                             <span>Hapus</span>
                           </Button>
-                        ) : (
-                          <span
-                            className="text-[10px] font-mono text-ink-muted px-1.5"
-                            title="Laporan sudah tersubmit ke Monev tidak dapat dihapus"
-                          >
-                            Terkunci
-                          </span>
                         )}
                       </div>
                     </div>
@@ -261,16 +400,15 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-hairline text-ink-muted bg-canvas-deep">
-                    <th className="py-2.5 px-4 font-medium w-32">Tanggal</th>
-                    <th className="py-2.5 px-3 font-medium w-28">Status</th>
-                    <th className="py-2.5 px-3 font-medium w-24">Sumber</th>
-                    <th className="py-2.5 px-4 font-medium">Ringkasan Aktivitas</th>
-                    <th className="py-2.5 px-4 font-medium text-right w-44">Aksi</th>
+                    <th className="py-3 px-4 font-medium w-36">Tanggal</th>
+                    <th className="py-3 px-3 font-medium w-32">Status</th>
+                    <th className="py-3 px-4 font-medium">Ringkasan Aktivitas</th>
+                    <th className="py-3 px-4 font-medium text-right w-44">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">
                   {paginatedReports.map((r) => {
-                    const isExpanded = expandedId === r.id;
+                    const dateInfo = formatDisplayDate(r.date);
                     const isDeleting = deletingId === r.id || isPending;
                     const canDelete = r.status !== "SUBMITTED";
                     const isSubmitted = r.status === "SUBMITTED";
@@ -278,125 +416,92 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                     return (
                       <tr
                         key={r.id}
-                        className="hover:bg-canvas-deep/50 transition-colors group"
+                        onClick={() => setSelectedReportForModal(r)}
+                        className="hover:bg-canvas-deep/70 transition-colors cursor-pointer group"
                       >
-                        <td className="py-3 px-4 font-mono font-medium text-ink-primary align-top">
-                          <span>{r.date}</span>
+                        {/* Column 1: Tanggal */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="space-y-0.5">
+                            <p className="font-mono font-semibold text-ink-primary group-hover:text-primary transition-colors">
+                              {dateInfo.formatted}
+                            </p>
+                            <p className="text-[11px] text-ink-muted">
+                              {dateInfo.day}
+                            </p>
+                          </div>
                         </td>
 
-                        <td className="py-3 px-3 align-top">
-                          {getStatusBadge(r.status, r.date)}
+                        {/* Column 2: Status */}
+                        <td className="py-3.5 px-3 align-top">
+                          {getStatusBadge(r.status)}
                         </td>
 
-                        <td className="py-3 px-3 font-mono text-ink-secondary text-[11px] align-top">
-                          {r.sourceType}
-                        </td>
-
-                        <td className="py-3 px-4 text-ink-secondary align-top">
-                          <div className="space-y-1">
-                            <p
-                              className={`font-sans text-ink-primary leading-relaxed ${
-                                isExpanded ? "" : "line-clamp-2"
-                              }`}
-                            >
+                        {/* Column 3: Ringkasan Aktivitas */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="space-y-1.5">
+                            <p className="text-ink-secondary leading-relaxed line-clamp-2 group-hover:text-ink-primary transition-colors">
                               {r.activity}
                             </p>
-
-                            {isExpanded && (
-                              <div className="mt-3 pt-3 border-t border-hairline space-y-2.5 text-[11px] bg-canvas-deep p-3 rounded-xs">
-                                <div>
-                                  <span className="font-semibold text-primary block mb-0.5">
-                                    Pembelajaran:
-                                  </span>
-                                  <p className="text-ink-secondary leading-relaxed">
-                                    {r.learning}
-                                  </p>
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-warning block mb-0.5">
-                                    Kendala &amp; Solusi:
-                                  </span>
-                                  <p className="text-ink-secondary leading-relaxed">
-                                    {r.obstacles}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-3 mt-1">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedReportForModal(r)}
-                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium"
-                              >
+                            <div className="flex items-center gap-3 text-[11px] text-ink-muted">
+                              <span className="text-primary font-medium inline-flex items-center gap-1 group-hover:underline">
                                 <Eye className="w-3 h-3" />
-                                <span>Modal Detail</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => toggleExpand(r.id)}
-                                className="inline-flex items-center gap-1 text-[10px] text-ink-muted hover:text-ink-primary"
-                              >
-                                {isExpanded ? (
-                                  <>
-                                    <span>Tutup Inline</span>
-                                    <ChevronUp className="w-3 h-3" />
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>Buka Inline</span>
-                                    <ChevronDown className="w-3 h-3" />
-                                  </>
-                                )}
-                              </button>
+                                Lihat Laporan Lengkap
+                              </span>
+                              {r.sourceType && (
+                                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-xs bg-canvas-deep border border-hairline">
+                                  {r.sourceType}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-3 px-4 text-right align-top">
+                        {/* Column 4: Aksi */}
+                        <td
+                          className="py-3.5 px-4 text-right align-top"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* Tombol Buka Modal Detail */}
+                            {/* Tombol Detail Modal */}
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedReportForModal(r)}
-                              className="h-7 px-2 text-[11px] gap-1"
-                              title="Buka Modal Detail"
+                              className="h-7 px-2 text-[11px] gap-1 hover:text-primary"
+                              title="Buka Ringkasan Laporan Lengkap"
                             >
                               <Eye className="w-3 h-3 text-primary" />
                               <span>Detail</span>
                             </Button>
 
-                            {/* Edit / Buka di Editor */}
-                            {isSubmitted ? (
-                              <Link href={`/reports?date=${r.date}`}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2 text-[11px] gap-1 border-hairline text-ink-secondary"
-                                  title="Buka di Editor (Read-Only)"
-                                >
-                                  <Lock className="w-3 h-3 text-primary" />
-                                  <span>Buka</span>
-                                </Button>
-                              </Link>
-                            ) : (
-                              <Link href={`/reports?date=${r.date}`}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2 text-[11px] gap-1"
-                                  title="Buka di Editor Laporan"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                  <span>Edit</span>
-                                </Button>
-                              </Link>
-                            )}
+                            {/* Tombol Buka / Edit di Editor */}
+                            <Link href={`/reports?date=${r.date}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-[11px] gap-1"
+                                title={
+                                  isSubmitted
+                                    ? "Buka di Editor Laporan (Read-Only)"
+                                    : "Buka di Editor Laporan"
+                                }
+                              >
+                                {isSubmitted ? (
+                                  <>
+                                    <Lock className="w-3 h-3 text-primary" />
+                                    <span>Buka</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Edit3 className="w-3 h-3" />
+                                    <span>Edit</span>
+                                  </>
+                                )}
+                              </Button>
+                            </Link>
 
-                            {/* Tombol Hapus (Hanya untuk DRAFT / FAILED) */}
+                            {/* Tombol Hapus (Hanya untuk Draft / Gagal) */}
                             {canDelete ? (
                               <Button
                                 type="button"
@@ -405,23 +510,16 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                                 disabled={isDeleting}
                                 onClick={() => setReportToDelete(r)}
                                 className="h-7 px-2 text-[11px] gap-1"
-                                title="Hapus laporan ini"
+                                title="Hapus draft laporan ini"
                               >
                                 {isDeleting ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
                                   <Trash2 className="w-3 h-3" />
                                 )}
                                 <span>Hapus</span>
                               </Button>
-                            ) : (
-                              <span
-                                className="text-[10px] font-mono text-ink-muted px-1"
-                                title="Laporan sudah tersubmit ke Monev tidak dapat dihapus"
-                              >
-                                Terkunci
-                              </span>
-                            )}
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -454,8 +552,8 @@ export function ReportHistoryTable({ reports }: ReportHistoryTableProps) {
                 <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
                 Prev
               </Button>
-              <span className="text-[11px] font-mono text-ink-secondary px-1.5">
-                {currentPage} / {totalPages}
+              <span className="text-[11px] font-mono text-ink-secondary px-2">
+                Halaman {currentPage} dari {totalPages}
               </span>
               <Button
                 type="button"
