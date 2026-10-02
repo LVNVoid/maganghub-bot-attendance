@@ -28,6 +28,22 @@ interface FlattenedCommit extends GitHubCommit {
   branch: string;
 }
 
+function formatShortDate(dateStr: string) {
+  if (!dateStr) return "-";
+  try {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+    ];
+    return `${String(d).padStart(2, "0")} ${months[m - 1]} ${y}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 export function CommitsPreview({
   groups,
   recentGroups = [],
@@ -99,30 +115,27 @@ export function CommitsPreview({
   return (
     <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-5 space-y-4">
       {/* Header with Mode Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
-        <div className="flex items-center gap-2">
-          <GitCommit className="w-4 h-4 text-primary shrink-0" />
-          <div>
-            <div className="text-xs font-semibold text-ink-primary flex items-center gap-2">
-              <span>
-                {viewMode === "today"
-                  ? `Aktivitas Commit Hari Ini (${date})`
-                  : "Semua Riwayat Commit Terakhir"}
-              </span>
-              <span className="text-[11px] font-mono text-ink-muted font-normal">
-                ({totalCommits} commit)
-              </span>
-            </div>
-            <p className="text-[11px] text-ink-muted mt-0.5">
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-hairline">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-sm bg-canvas-deep border border-hairline flex items-center justify-center text-primary shrink-0">
+            <GitCommit className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-semibold text-ink-primary truncate">
               {viewMode === "today"
-                ? `Commit yang masuk pada tanggal target ${date}`
-                : "Riwayat commit pengerjaan terakhir lintas repository yang dipantau"}
+                ? "Aktivitas Commit Hari Ini"
+                : "Riwayat Commit Terakhir"}
+            </h3>
+            <p className="text-[11px] text-ink-muted truncate">
+              {viewMode === "today"
+                ? `${formatShortDate(date)} • ${totalCommits} commit`
+                : `${trackedRepoCount} repository • ${totalCommits} commit`}
             </p>
           </div>
         </div>
 
         {/* View Toggle Buttons */}
-        <div className="flex items-center gap-1.5 bg-canvas-deep p-1 rounded-sm border border-hairline self-start sm:self-auto">
+        <div className="flex items-center bg-canvas-deep p-0.5 rounded-sm border border-hairline shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -140,7 +153,7 @@ export function CommitsPreview({
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
                 todayCommits.length > 0
-                  ? "bg-primary-soft text-primary"
+                  ? "bg-primary-soft text-primary font-semibold"
                   : "bg-surface text-ink-muted"
               }`}
             >
@@ -161,11 +174,11 @@ export function CommitsPreview({
             }`}
           >
             <History className="w-3 h-3 text-primary" />
-            <span>Semua Riwayat Terakhir</span>
+            <span>Semua Riwayat</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
                 recentCommits.length > 0
-                  ? "bg-primary-soft text-primary"
+                  ? "bg-primary-soft text-primary font-semibold"
                   : "bg-surface text-ink-muted"
               }`}
             >
@@ -203,7 +216,7 @@ export function CommitsPreview({
                 className="gap-1.5 text-xs h-8 border-hairline hover:border-primary/40"
               >
                 <History className="w-3.5 h-3.5 text-primary" />
-                <span>Lihat Semua Riwayat Commit Terakhir ({recentCommits.length})</span>
+                <span>Lihat Semua Riwayat ({recentCommits.length})</span>
               </Button>
             </div>
           )}
