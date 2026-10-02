@@ -34,10 +34,15 @@ async function CommitsSection({
   date: string;
   trackedRepoCount: number;
 }) {
-  const commitsGroups = await fetchAllTrackedCommitsForUser(userId, date);
+  const [commitsGroups, recentGroups] = await Promise.all([
+    fetchAllTrackedCommitsForUser(userId, date),
+    fetchAllTrackedCommitsForUser(userId, date, { fallbackToPrevious: true }),
+  ]);
+
   return (
     <CommitsPreview
       groups={commitsGroups}
+      recentGroups={recentGroups}
       date={date}
       trackedRepoCount={trackedRepoCount}
     />
