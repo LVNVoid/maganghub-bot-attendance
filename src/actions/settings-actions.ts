@@ -2,6 +2,7 @@
 
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { encrypt } from "@/lib/crypto";
@@ -83,6 +84,7 @@ export async function deleteMaganghubCredential(): Promise<{
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     return { success: true };
   } catch (err) {
     console.error("Delete credential error:", err);
@@ -132,6 +134,7 @@ export async function testMaganghubConnection(): Promise<{
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
 
     return {
       success: true,
@@ -154,6 +157,7 @@ export async function testMaganghubConnection(): Promise<{
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
 
     return {
       success: false,
@@ -188,6 +192,7 @@ export async function toggleAutomation(
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     return { success: true, isEnabled: enabled };
   } catch (err) {
     console.error("Toggle automation error:", err);
@@ -314,6 +319,7 @@ export async function addGithubRepo(
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     revalidatePath("/reports");
     return { success: true };
   } catch (err) {
@@ -340,6 +346,7 @@ export async function deleteGithubRepo(
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     revalidatePath("/reports");
     return { success: true };
   } catch (err) {
@@ -368,6 +375,7 @@ export async function toggleTrackRepo(
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     revalidatePath("/reports");
     return { success: true };
   } catch (err) {
@@ -416,6 +424,7 @@ export async function savePersonalGithubToken(
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     revalidatePath("/reports");
     return { success: true };
   } catch (err) {
@@ -441,6 +450,7 @@ export async function deletePersonalGithubToken(): Promise<{
 
     revalidatePath("/settings");
     revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     revalidatePath("/reports");
     return { success: true };
   } catch (err) {

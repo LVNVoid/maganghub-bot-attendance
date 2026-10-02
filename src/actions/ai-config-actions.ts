@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { auth } from "@/lib/auth";
 import { isSafeUrl } from "@/lib/url-utils";
 import { aiConfigSchema } from "@/schemas/ai-config-schema";
@@ -41,6 +42,8 @@ export async function saveUserAiConfigAction(
 
     revalidatePath("/settings");
     revalidatePath("/reports");
+    revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     return { success: true };
   } catch (err) {
     console.error("Save AI config error:", err);
@@ -61,6 +64,8 @@ export async function deleteUserAiConfigAction(): Promise<{
     await deleteUserAiConfig(session.user.id);
     revalidatePath("/settings");
     revalidatePath("/reports");
+    revalidatePath("/dashboard");
+    invalidateCacheTag(`dashboard-${session.user.id}`);
     return { success: true };
   } catch (err) {
     console.error("Delete AI config error:", err);

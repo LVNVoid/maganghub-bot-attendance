@@ -1,6 +1,7 @@
 import axios from "axios";
-import { db } from "@/lib/db";
+import { db } from "@/services/db";
 import { decrypt } from "@/lib/crypto";
+import { memoryCache } from "@/lib/cache";
 
 export interface GitHubCommit {
   sha: string;
@@ -140,6 +141,12 @@ export async function fetchRepoCommits({
   const since = new Date(`${date}T00:00:00+07:00`).toISOString();
   const until = new Date(`${date}T23:59:59+07:00`).toISOString();
 
+  const cacheKey = `gh_commits_${owner}_${repo}_${branch || "def"}_${date}_${fallbackToPrevious ? "fb" : "nofb"}`;
+  const cached = memoryCache.get<{ commits: GitHubCommit[]; detectedBranch: string }>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   // If no token is available, prioritize public Atom feed to avoid Vercel shared IP rate limit
   if (!token) {
     const atomResult = await fetchCommitsFromAtomFeed({
@@ -151,6 +158,7 @@ export async function fetchRepoCommits({
       fallbackToPrevious,
     });
     if (atomResult) {
+      memoryCache.set(cacheKey, atomResult, 60);
       return atomResult;
     }
   }
@@ -221,7 +229,9 @@ export async function fetchRepoCommits({
     }));
 
     const commits = rawCommits.filter((c: GitHubCommit) => isUsefulCommit(c.message));
-    return { commits, detectedBranch: activeBranch };
+    const result = { commits, detectedBranch: activeBranch };
+    memoryCache.set(cacheKey, result, 60);
+    return result;
   } catch (error) {
     // Fallback to Atom feed on API error (e.g. 403 Rate Limit on Vercel shared IP)
     const atomFallback = await fetchCommitsFromAtomFeed({
@@ -233,6 +243,7 @@ export async function fetchRepoCommits({
       fallbackToPrevious,
     });
     if (atomFallback) {
+      memoryCache.set(cacheKey, atomFallback, 60);
       return atomFallback;
     }
 

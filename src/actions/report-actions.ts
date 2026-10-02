@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { invalidateCacheTag } from "@/lib/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { fetchAllTrackedCommitsForUser } from "@/lib/github";
@@ -121,6 +122,8 @@ export async function generateReportDraft(
 
     revalidatePath("/reports");
     revalidatePath("/reports/history");
+    invalidateCacheTag(`reports-${userId}`);
+    invalidateCacheTag(`dashboard-${userId}`);
 
     return {
       success: true,
@@ -228,6 +231,8 @@ export async function saveReportDraft(
 
     revalidatePath("/reports");
     revalidatePath("/reports/history");
+    invalidateCacheTag(`reports-${userId}`);
+    invalidateCacheTag(`dashboard-${userId}`);
 
     return {
       success: true,
@@ -271,6 +276,8 @@ export async function submitReportAction(): Promise<{
     revalidatePath("/dashboard");
     revalidatePath("/reports");
     revalidatePath("/reports/history");
+    invalidateCacheTag(`reports-${session.user.id}`);
+    invalidateCacheTag(`dashboard-${session.user.id}`);
 
     return result;
   } catch (error) {
@@ -334,6 +341,8 @@ export async function deleteReportAction(
     revalidatePath("/reports/history");
     revalidatePath("/dashboard");
     revalidatePath("/calendar");
+    invalidateCacheTag(`reports-${userId}`);
+    invalidateCacheTag(`dashboard-${userId}`);
 
     return { success: true, message: "Laporan berhasil dihapus." };
   } catch (error) {

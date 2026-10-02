@@ -1,7 +1,8 @@
 import { db } from "@/services/db";
 import type { SaveReportPayload, ReportItem } from "@/schemas/report-schema";
+import { safeCache } from "@/lib/cache";
 
-export async function getUserReports(userId: string): Promise<ReportItem[]> {
+async function fetchUserReports(userId: string): Promise<ReportItem[]> {
   const reports = await db.report.findMany({
     where: { userId },
     orderBy: { date: "desc" },
@@ -17,6 +18,17 @@ export async function getUserReports(userId: string): Promise<ReportItem[]> {
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   }));
+}
+
+export async function getUserReports(userId: string): Promise<ReportItem[]> {
+  return safeCache(
+    () => fetchUserReports(userId),
+    ["user-reports", userId],
+    {
+      tags: [`reports-${userId}`],
+      revalidate: 120,
+    }
+  )();
 }
 
 export async function getRecentReports(
@@ -46,18 +58,18 @@ export interface CalendarReportItem {
   status: "DRAFT" | "READY" | "SUBMITTED" | "FAILED";
 }
 
-export async function getCalendarReports(
+async function fetchCalendarReports(
   userId: string,
-  startDate?: Date
+  startDateStr?: string
 ): Promise<CalendarReportItem[]> {
-  const filterDate =
-    startDate ??
-    (() => {
-      const d = new Date();
-      d.setFullYear(d.getFullYear() - 1);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    })();
+  const filterDate = startDateStr
+    ? new Date(startDateStr)
+    : (() => {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() - 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      })();
 
   const reports = await db.report.findMany({
     where: {
@@ -77,7 +89,22 @@ export async function getCalendarReports(
   }));
 }
 
-export async function getReportByDate(
+export async function getCalendarReports(
+  userId: string,
+  startDate?: Date
+): Promise<CalendarReportItem[]> {
+  const startDateStr = startDate ? startDate.toISOString().split("T")[0] : undefined;
+  return safeCache(
+    () => fetchCalendarReports(userId, startDateStr),
+    ["calendar-reports", userId, startDateStr || "default"],
+    {
+      tags: [`reports-${userId}`],
+      revalidate: 300,
+    }
+  )();
+}
+
+async function fetchReportByDate(
   userId: string,
   dateStr: string
 ): Promise<ReportItem | null> {
@@ -103,6 +130,20 @@ export async function getReportByDate(
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
   };
+}
+
+export async function getReportByDate(
+  userId: string,
+  dateStr: string
+): Promise<ReportItem | null> {
+  return safeCache(
+    () => fetchReportByDate(userId, dateStr),
+    ["report-by-date", userId, dateStr],
+    {
+      tags: [`reports-${userId}`],
+      revalidate: 60,
+    }
+  )();
 }
 
 export async function getReportById(

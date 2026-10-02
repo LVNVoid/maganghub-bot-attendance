@@ -1,4 +1,5 @@
 import { db } from "@/services/db";
+import { safeCache } from "@/lib/cache";
 
 export interface DashboardMetrics {
   credential: { status: string } | null;
@@ -16,7 +17,7 @@ export interface DashboardMetrics {
   trackedRepoCount: number;
 }
 
-export async function getDashboardMetrics(
+async function fetchDashboardMetrics(
   userId: string,
   todayStr: string
 ): Promise<DashboardMetrics> {
@@ -81,4 +82,18 @@ export async function getDashboardMetrics(
     aiConfig,
     trackedRepoCount,
   };
+}
+
+export async function getDashboardMetrics(
+  userId: string,
+  todayStr: string
+): Promise<DashboardMetrics> {
+  return safeCache(
+    () => fetchDashboardMetrics(userId, todayStr),
+    ["dashboard-metrics", userId, todayStr],
+    {
+      tags: [`dashboard-${userId}`],
+      revalidate: 60,
+    }
+  )();
 }
