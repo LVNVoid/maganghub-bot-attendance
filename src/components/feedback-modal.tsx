@@ -34,6 +34,17 @@ export function FeedbackModal() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isMobileExpanded, setIsMobileExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-collapse on mobile screens after initial display
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsMobileExpanded(false);
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load user feedbacks when modal opens or tab changes to history
   const loadHistory = async () => {
@@ -153,10 +164,31 @@ export function FeedbackModal() {
         onClick={() => setIsOpen(true)}
         type="button"
         aria-label="Bantuan dan Feedback"
-        className="fixed bottom-5 right-5 z-40 bg-surface-elevated hover:bg-canvas-subtle border border-hairline hover:border-primary text-ink-primary hover:text-primary shadow-xl px-3.5 py-2.5 rounded-full flex items-center gap-2 text-xs font-medium cursor-pointer transition-all duration-200 group active:scale-95"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onFocus={() => setIsHovered(true)}
+        onBlur={() => setIsHovered(false)}
+        className={cn(
+          "fixed bottom-5 right-5 z-40 bg-surface-elevated hover:bg-canvas-subtle border border-hairline hover:border-primary text-ink-primary hover:text-primary shadow-2xl h-12 sm:h-11 rounded-full flex items-center cursor-pointer transition-all duration-300 group active:scale-95",
+          isMobileExpanded || isHovered
+            ? "px-4 sm:px-4.5"
+            : "px-3.5 sm:px-4.5"
+        )}
       >
-        <MessageSquarePlus className="w-4 h-4 text-primary group-hover:rotate-12 transition-transform duration-200" />
-        <span className="hidden sm:inline">Bantuan &amp; Feedback</span>
+        <MessageSquarePlus className="w-5 h-5 text-primary shrink-0 group-hover:rotate-12 transition-transform duration-200" />
+        <span
+          className={cn(
+            "font-medium whitespace-nowrap overflow-hidden transition-all duration-500 ease-in-out text-xs sm:text-xs",
+            // Desktop: always expanded
+            "sm:max-w-[200px] sm:opacity-100 sm:ml-2.5",
+            // Mobile: animated collapse / expand
+            isMobileExpanded || isHovered
+              ? "max-w-[180px] opacity-100 ml-2"
+              : "max-w-0 opacity-0 ml-0"
+          )}
+        >
+          Bantuan &amp; Feedback
+        </span>
       </button>
 
       {/* Modal Dialog */}
