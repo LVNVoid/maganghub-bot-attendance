@@ -64,7 +64,13 @@ export async function executeUserDailySubmit(
   if (!report) {
     // Generate draft otomatis
     try {
-      const groups = await fetchAllTrackedCommitsForUser(userId, dateStr);
+      let groups = await fetchAllTrackedCommitsForUser(userId, dateStr);
+      if (groups.length === 0) {
+        // Fallback otomatis ke commit riwayat sebelumnya jika commit hari ini kosong
+        groups = await fetchAllTrackedCommitsForUser(userId, dateStr, {
+          fallbackToPrevious: true,
+        });
+      }
       const summary = formatCommitsToActivitySummary(groups);
       const userAiConfig = await getDecryptedUserAiConfig(userId);
       const generated = await generateReportFromActivity(summary, userAiConfig);
