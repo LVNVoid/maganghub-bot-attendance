@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { FeedbackModal } from "@/components/feedback-modal";
 
 interface DashboardShellProps {
   user: {
@@ -50,6 +51,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">{children}</div>
         </main>
       </div>
+
+      {/* User Feedback Modal & Floating Trigger */}
+      <FeedbackModal />
     </div>
   );
 }

@@ -25,6 +25,7 @@ model User {
   submitLogs     SubmitLog[]
   automation     AutomationConfig?
   aiConfig       UserAiConfig?
+  feedbacks      Feedback[]
 }
 
 model Account {
@@ -194,4 +195,34 @@ enum TriggerType {
   MANUAL
   CRON_WEBHOOK
   ADMIN_FORCE
+}
+
+model Feedback {
+  id        String           @id @default(cuid())
+  userId    String
+  category  FeedbackCategory @default(BUG)
+  subject   String
+  message   String           @db.Text
+  status    FeedbackStatus   @default(OPEN)
+  adminNote String?          @db.Text
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+}
+
+enum FeedbackCategory {
+  BUG
+  FEATURE
+  GENERAL
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
 }

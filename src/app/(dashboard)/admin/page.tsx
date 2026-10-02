@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { getAdminOverview } from "@/services/admin-service";
 import { redirect } from "next/navigation";
-import { Users, FileCheck, ShieldAlert, CheckCircle2, AlertCircle } from "lucide-react";
+import { Users, FileCheck, ShieldAlert, CheckCircle2, AlertCircle, MessageSquareWarning } from "lucide-react";
+import { AdminFeedbackManager } from "@/components/admin-feedback-manager";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -21,6 +22,8 @@ export default async function AdminPage() {
     todayReportsCount,
     successLogsCount,
     successRate,
+    feedbacks,
+    feedbackStats,
   } = await getAdminOverview();
 
   return (
@@ -30,12 +33,12 @@ export default async function AdminPage() {
           Admin Panel &amp; Monitoring Peserta
         </h1>
         <p className="text-xs text-ink-secondary mt-1">
-          Pantau seluruh peserta magang yang terdaftar, status automasi cron, dan performa submit
+          Pantau seluruh peserta magang yang terdaftar, status automasi cron, performa submit, dan feedback kendala
         </p>
       </div>
 
       {/* Aggregate Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Total Peserta</span>
@@ -78,6 +81,18 @@ export default async function AdminPage() {
             {totalReports}
           </div>
           <p className="text-[11px] text-ink-muted">Kumulatif seluruh user</p>
+        </div>
+
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2 col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-ink-secondary">
+            <span className="text-xs font-medium">Kendala &amp; Feedback</span>
+            <MessageSquareWarning className="w-4 h-4 text-warning" />
+          </div>
+          <div className="text-2xl font-semibold font-mono text-ink-primary flex items-baseline gap-1.5">
+            <span>{feedbackStats.open}</span>
+            <span className="text-xs text-ink-muted font-normal">/ {feedbackStats.total} total</span>
+          </div>
+          <p className="text-[11px] text-ink-muted">Perlu ditindaklanjuti</p>
         </div>
       </div>
 
@@ -171,6 +186,9 @@ export default async function AdminPage() {
           </table>
         </div>
       </div>
+
+      {/* User Feedbacks Section */}
+      <AdminFeedbackManager initialFeedbacks={feedbacks} stats={feedbackStats} />
     </div>
   );
 }
