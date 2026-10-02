@@ -5,9 +5,40 @@ import {
   generateReportFromActivity,
   cleanReportText,
   clampReportLength,
+  extractJsonFromAiResponse,
 } from "./ai";
 
 describe("AI Report Generator Module", () => {
+  it("extractJsonFromAiResponse should correctly extract JSON wrapped in thinking tags and markdown", () => {
+    const aiOutput = `<thinking>
+Some detailed chain of thought reasoning here...
+</thinking>
+
+\`\`\`json
+{
+  "activity_log": "Melakukan penyesuaian alur kerja operasional.",
+  "lesson_learned": "Memahami validasi data medis.",
+  "obstacles": "Menyesuaikan integrasi tampilan."
+}
+\`\`\``;
+
+    const parsed = extractJsonFromAiResponse(aiOutput);
+    expect(parsed.activity_log).toBe("Melakukan penyesuaian alur kerja operasional.");
+    expect(parsed.lesson_learned).toBe("Memahami validasi data medis.");
+  });
+
+  it("extractJsonFromAiResponse should extract raw JSON object with leading whitespace", () => {
+    const raw = '\n\n{"activity_log":"Teks satu","lesson_learned":"Teks dua","obstacles":"Teks tiga"}\n';
+    const parsed = extractJsonFromAiResponse(raw);
+    expect(parsed.activity_log).toBe("Teks satu");
+  });
+
+  it("generateFallbackReport should parse semicolon-separated commits without dumping raw syntax", () => {
+    const summary = "- [repo]: fix(gitignore): uncomment env; feat(klaim): integrasi dializer; refactor(klaim): gunakan sql";
+    const report = generateFallbackReport(summary);
+    expect(report.activity_log).not.toContain("feat(klaim):");
+    expect(report.activity_log).not.toContain("refactor(klaim):");
+  });
   it("cleanReportText should strip em dashes, double hyphens, and markdown syntax", () => {
     const raw = "Menambahkan fitur — sangat penting -- untuk `sistem` **pengguna**.";
     expect(cleanReportText(raw)).toBe("Menambahkan fitur , sangat penting , untuk sistem pengguna.");

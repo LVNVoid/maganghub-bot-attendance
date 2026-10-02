@@ -44,6 +44,47 @@ export function ensureMinLength(text: string, fallbackAddition: string): string 
   return clampReportLength(cleaned);
 }
 
+export function extractJsonFromAiResponse(content: string): any {
+  if (!content) throw new Error("Empty AI response");
+
+  // 1. Strip reasoning/thinking tags (Claude, DeepSeek, etc.)
+  let sanitized = content
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim();
+
+  // 2. Try direct parse
+  try {
+    return JSON.parse(sanitized);
+  } catch {
+    // continue to extract
+  }
+
+  // 3. Extract JSON markdown block ```json ... ``` or ``` ... ```
+  const codeBlockMatch = sanitized.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch {
+      // continue to brace match
+    }
+  }
+
+  // 4. Find outermost object braces
+  const firstBrace = sanitized.indexOf("{");
+  const lastBrace = sanitized.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = sanitized.substring(firstBrace, lastBrace + 1).trim();
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // fallback error
+    }
+  }
+
+  throw new Error("Unable to parse JSON from AI response: " + sanitized.slice(0, 80));
+}
+
 function cleanScope(scope: string): string {
   if (!scope) return "";
   const cleaned = scope.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ").trim();
@@ -141,11 +182,18 @@ function translateCommit(rawMsg: string): {
 }
 
 export function generateFallbackReport(activitySummary: string): GeneratedReport {
-  // Extract individual commit lines
-  const rawLines = activitySummary
-    .split("\n")
-    .map((l) => l.trim().replace(/^-\s*(\[[^\]]+\]:\s*)?/, ""))
-    .filter(Boolean);
+  // Extract individual commit lines, splitting both by newlines and semicolons
+  const rawLines: string[] = [];
+  const lines = activitySummary.split("\n");
+  for (const line of lines) {
+    const cleanLine = line.trim().replace(/^-\s*(\[[^\]]+\]:\s*)?/, "");
+    if (!cleanLine) continue;
+    // Split multiple commits joined by semicolon
+    const parts = cleanLine.split(/;\s+/);
+    for (const part of parts) {
+      if (part.trim()) rawLines.push(part.trim());
+    }
+  }
 
   const parsedCommits = rawLines.map(translateCommit);
   const primaryCategory = parsedCommits[0]?.category || "general";
@@ -319,7 +367,7 @@ ATURAN STRICT:
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        timeout: 25000,
+        timeout: 90000,
       }
     );
 
@@ -328,9 +376,7 @@ ATURAN STRICT:
       return generateFallbackReport(activitySummary);
     }
 
-    // Clean any markdown wrapper if present
-    content = content.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-    const parsed = JSON.parse(content);
+    const parsed = extractJsonFromAiResponse(content);
 
     const rawActivity = cleanReportText(parsed.activity_log || "");
     const rawLearning = cleanReportText(parsed.lesson_learned || "");
