@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { ensureMinLength, generateFallbackReport, generateReportFromActivity, cleanReportText } from "./ai";
+import {
+  ensureMinLength,
+  generateFallbackReport,
+  generateReportFromActivity,
+  cleanReportText,
+  clampReportLength,
+} from "./ai";
 
 describe("AI Report Generator Module", () => {
   it("cleanReportText should strip em dashes, double hyphens, and markdown syntax", () => {
@@ -7,7 +13,16 @@ describe("AI Report Generator Module", () => {
     expect(cleanReportText(raw)).toBe("Menambahkan fitur , sangat penting , untuk sistem pengguna.");
   });
 
-  it("ensureMinLength should keep text >= 100 chars untouched", () => {
+  it("clampReportLength should cap text to max 500 characters and end on sentence boundary", () => {
+    const sentence = "Kalimat uji coba validasi laporan magang harian yang padat dan informatif. ";
+    const longText = sentence.repeat(10); // ~750 chars
+    const clamped = clampReportLength(longText, 500);
+    expect(clamped.length).toBeLessThanOrEqual(500);
+    expect(clamped.length).toBeGreaterThanOrEqual(100);
+    expect(clamped.endsWith(".")).toBe(true);
+  });
+
+  it("ensureMinLength should keep text >= 100 chars untouched when within 500 chars", () => {
     const longText = "a".repeat(120);
     expect(ensureMinLength(longText, "padding")).toBe(longText);
   });

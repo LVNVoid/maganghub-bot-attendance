@@ -7,6 +7,7 @@ export interface GeneratedReport {
 }
 
 const MIN_CHAR_LENGTH = 100;
+const MAX_CHAR_LENGTH = 500;
 
 export function cleanReportText(text: string): string {
   if (!text) return "";
@@ -18,17 +19,29 @@ export function cleanReportText(text: string): string {
     .trim();
 }
 
+export function clampReportLength(text: string, maxLen = MAX_CHAR_LENGTH): string {
+  const cleaned = cleanReportText(text);
+  if (cleaned.length <= maxLen) return cleaned;
+
+  const truncated = cleaned.slice(0, maxLen);
+  const lastPeriod = Math.max(truncated.lastIndexOf(". "), truncated.lastIndexOf("."));
+  if (lastPeriod >= MIN_CHAR_LENGTH) {
+    return truncated.slice(0, lastPeriod + 1).trim();
+  }
+  return truncated.trim();
+}
+
 export function ensureMinLength(text: string, fallbackAddition: string): string {
   let cleaned = cleanReportText(text);
   if (cleaned.length >= MIN_CHAR_LENGTH) {
-    return cleaned;
+    return clampReportLength(cleaned);
   }
 
   // Append professional contextual sentence to meet >= 100 chars
   while (cleaned.length < MIN_CHAR_LENGTH) {
     cleaned += ` ${fallbackAddition}`;
   }
-  return cleaned;
+  return clampReportLength(cleaned);
 }
 
 function cleanScope(scope: string): string {
@@ -143,12 +156,12 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
     const descriptions = parsedCommits.map((c) => c.text).join(" Selain itu, ");
     activity_log = ensureMinLength(
       cleanReportText(descriptions),
-      "Seluruh pengujian dilakukan secara lokal guna memastikan fungsionalitas aplikasi berjalan sesuai target."
+      "Seluruh tahapan pengerjaan telah melalui proses pengujian lokal secara berkala guna memastikan alur kerja aplikasi berjalan lancar dan fungsionalitas fitur siap digunakan dengan baik."
     );
   } else {
     activity_log = ensureMinLength(
       "Melakukan penyesuaian alur kerja sistem, perapian komponen antarmuka, dan pengujian fitur aplikasi secara lokal.",
-      "Langkah ini memastikan setiap alur interaksi pengguna dapat digunakan dengan stabil dan mudah."
+      "Langkah pengujian ini dilakukan untuk memastikan setiap alur interaksi pengguna dapat digunakan dengan stabil, mudah dipahami, serta bebas dari kendala tampilan pada berbagai perangkat."
     );
   }
 
@@ -158,31 +171,31 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
     case "fix":
       lesson_learned = ensureMinLength(
         "Memahami alur pemeriksaan kendala teknis secara terstruktur dan langkah verifikasi perbaikan pada sistem.",
-        "Hal ini melatih ketelitian dalam menganalisis akar masalah agar layanan aplikasi tetap berjalan lancar."
+        "Pembelajaran ini melatih ketelitian dalam menelusuri sumber masalah serta memahami pentingnya validasi menyeluruh agar layanan operasional tetap berjalan stabil dan dapat diandalkan oleh pengguna."
       );
       break;
     case "feat":
       lesson_learned = ensureMinLength(
         "Mempelajari perancangan antarmuka yang ramah pengguna serta penyesuaian validasi masukan data pada aplikasi.",
-        "Wawasan ini membantu memahami kebutuhan pengguna dan alur kerja fungsional yang mudah dipahami."
+        "Hal ini memperdalam wawasan mengenai penyelarasan kebutuhan pengguna dengan kesiapan alur kerja sistem agar setiap fungsi baru mudah digunakan dan terintegrasi dengan baik."
       );
       break;
     case "refactor":
       lesson_learned = ensureMinLength(
         "Memahami teknik perapian alur modul dan penataan struktur logika aplikasi agar lebih mudah dipelihara.",
-        "Penerapan ini penting agar pemeliharaan sistem ke depan dapat dilakukan secara efektif."
+        "Penerapan ini penting guna mempermudah proses pemeliharaan berkelanjutan serta menjaga kejelasan alur logika kerja sistem dalam jangka panjang."
       );
       break;
     case "config":
       lesson_learned = ensureMinLength(
         "Memahami pengelolaan parameter konfigurasi dan keselarasan lingkungan kerja aplikasi agar berjalan konsisten.",
-        "Pengetahuan ini mendukung kelancaran pemeliharaan sistem pada setiap tahap pengembangan."
+        "Pengetahuan ini menunjang kesiapan alur pemeliharaan sistem serta meminimalkan potensi ketidaksesuaian pengaturan antar lingkungan kerja pengembangan."
       );
       break;
     default:
       lesson_learned = ensureMinLength(
         "Memahami pentingnya ketelitian dalam penataan alur kerja aplikasi dan dokumentasi catatan perubahan berkala.",
-        "Pembelajaran ini meningkatkan kedisiplinan serta kualitas kerja dalam menyelesaikan target tugas."
+        "Pembelajaran ini meningkatkan kedisiplinan kerja serta pemahaman terhadap alur pengembangan sistem yang terstruktur untuk mendukung penyelesaian target tugas dengan baik."
       );
   }
 
@@ -191,39 +204,39 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
   switch (primaryCategory) {
     case "fix":
       obstacles = ensureMinLength(
-        "Menemukan kendala saat proses pengujian awal, yang berhasil diselesaikan dengan pemeriksaan alur dan penyesuaian data.",
-        "Pengujian lanjutan memastikan fungsi yang diperbaiki telah berjalan sesuai harapan."
+        "Menemukan ketidaksesuaian perilaku sistem saat proses pengujian awal terhadap alur yang diperbaiki.",
+        "Kendala ini berhasil diselesaikan dengan menelusuri kembali aliran data serta melakukan pengujian bertahap hingga seluruh fungsi yang diperbaiki berjalan normal tanpa efek samping."
       );
       break;
     case "feat":
       obstacles = ensureMinLength(
-        "Memerlukan penyesuaian tampilan agar nyaman di berbagai perangkat, yang diatasi dengan uji responsif berkala.",
-        "Seluruh fungsionalitas baru kini dapat diakses dengan baik oleh pengguna."
+        "Menghadapi kebutuhan penyesuaian tata letak tampilan agar tetap proporsional dan nyaman diakses di berbagai ukuran layar.",
+        "Tantangan ini diatasi melalui pengujian responsif berkala dan penataan ulang elemen antarmuka sehingga fungsionalitas baru dapat digunakan secara nyaman oleh pengguna."
       );
       break;
     case "refactor":
       obstacles = ensureMinLength(
-        "Perlu memastikan perapian alur tidak mengganggu fungsi yang sudah ada, yang diselesaikan dengan uji coba bertahap.",
-        "Hasil pengujian menunjukkan alur sistem tetap bekerja konsisten tanpa kendala."
+        "Perlu memastikan proses perapian alur kerja tidak mengubah perilaku fungsi yang sudah berjalan sebelumnya.",
+        "Hal ini diselesaikan dengan melakukan uji coba regresi fungsional secara bertahap pada setiap bagian terkait untuk memastikan konsistensi hasil keluaran sistem."
       );
       break;
     case "config":
       obstacles = ensureMinLength(
-        "Menyesuaikan parameter konfigurasi lingkungan aplikasi, yang diselesaikan dengan pemeriksaan panduan teknis.",
-        "Pengaturan sistem berhasil diselaraskan tanpa kendala lanjutan."
+        "Menyesuaikan parameter konfigurasi lingkungan aplikasi agar selaras dengan kebutuhan alur kerja sistem.",
+        "Kendala diselesaikan dengan memeriksa panduan teknis serta melakukan validasi parameter secara teliti hingga pengaturan sistem berjalan tanpa hambatan."
       );
       break;
     default:
       obstacles = ensureMinLength(
-        "Menghadapi penyesuaian minor pada sinkronisasi alur kerja, yang diselesaikan melalui pengecekan ulang secara teliti.",
-        "Pekerjaan harian dapat diselesaikan dengan baik sesuai target yang ditentukan."
+        "Menghadapi penyesuaian minor pada sinkronisasi alur kerja antar bagian aplikasi saat pengujian integrasi.",
+        "Tantangan ini diselesaikan melalui pemeriksaan ulang alur data secara mandiri sehingga tugas pengerjaan harian dapat diselesaikan sesuai target yang direncanakan."
       );
   }
 
   return {
-    activity_log: cleanReportText(activity_log),
-    lesson_learned: cleanReportText(lesson_learned),
-    obstacles: cleanReportText(obstacles),
+    activity_log: clampReportLength(activity_log),
+    lesson_learned: clampReportLength(lesson_learned),
+    obstacles: clampReportLength(obstacles),
   };
 }
 
@@ -252,29 +265,31 @@ export async function generateReportFromActivity(
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
   const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI untuk dibaca oleh pembimbing lapangan dan HRD non-teknis.
-Tugas Anda: Mengubah catatan pengerjaan/commit teknis pengguna menjadi laporan harian resmi 3 bagian yang berorientasi hasil, bahasa Indonesia baku, padat, dan bebas dari jargon kode tingkat rendah serta AI slop.
+Tugas Anda: Mengubah catatan pengerjaan/commit teknis pengguna menjadi laporan harian resmi 3 bagian yang terdengar wajar, natural, mengalir lancar, dan berorientasi hasil.
 
 ATURAN STRICT:
 1. ZERO LOW-LEVEL CODE JARGON:
    - DILARANG menyebutkan nama file (*.ts, *.tsx, *.json, *.prisma, *.css, *.md), path direktori (src/...), nama fungsi/metode (generateReportDraft, fetchCommits), nama hook (useState, useEffect), variabel, tipe data, SQL query, branch git, atau hash commit.
-   - Terjemahkan aktivitas teknis menjadi istilah alur kerja fungsional dan manfaat operasional bagi pengguna atau sistem.
+   - Terjemahkan aktivitas teknis menjadi istilah fungsional, fitur aplikasi, dan manfaat operasional bagi pengguna atau sistem.
    - Contoh DILARANG: "Mengubah file report-actions.ts dan fungsi fetchRepoCommits dengan menambahkan parameter fallbackToPrevious."
    - Contoh BENAR: "Menambahkan fitur konfirmasi otomatis saat data commit hari ini belum ada, sehingga sistem dapat menggunakan riwayat pengerjaan sebelumnya untuk menyusun laporan."
 
-2. ZERO AI SLOP & ANTI-KLISE:
+2. GAYA BAHASA NATURAL & ZERO AI SLOP:
+   - Gunakan gaya bahasa Indonesia yang wajar dan mengalir alami, seperti ditulis oleh staf magang yang memahami pekerjaannya secara langsung.
    - DILARANG menggunakan tanda em dash (—) atau tanda hubung ganda (--). Gunakan titik, koma, atau tanda kurung biasa.
    - DILARANG menggunakan kata-kata klise AI: "mulus", "seamless", "fondasi yang kokoh", "krusial", "perjalanan transformatif", "tapestry", "lanskap", "tidak hanya ... tetapi juga", "membuka potensi", "langkah signifikan", "revolusioner".
-   - DILARANG menggunakan kalimat pembuka klise ("Pada hari ini...", "Melaksanakan tugas pengembangan..."). Langsung jelaskan pekerjaan inti.
+   - DILARANG menggunakan kalimat pembuka klise ("Pada hari ini...", "Melaksanakan tugas pengembangan sesuai target sprint..."). Langsung jelaskan pekerjaan inti.
    - DILARANG menggunakan kalimat penutup optimisme palsu ("Hal ini membuktikan dedikasi...", "Masa depan sistem terlihat cerah...").
 
-3. TARGET PANJANG (100 - 180 KARAKTER PER BAGIAN):
+3. BATASAN PANJANG (MINIMAL 100 KARAKTER, MAKSIMAL 500 KARAKTER PER BAGIAN):
    - Setiap bagian WAJIB memenuhi syarat minimal 100 karakter.
-   - Jaga tetap ringkas dan padat: 100 hingga 180 karakter (1 sampai 2 kalimat substantif). Hindari narasi bertele-tele atau esai panjang (> 220 karakter).
+   - BATASI MAKSIMAL 500 KARAKTER per bagian. Jangan melebihi 500 karakter.
+   - Target panjang ideal yang natural: antara 200 hingga 450 karakter (2 sampai 4 kalimat padat yang mengalir wajar, jangan terlalu pendek atau kerdil).
 
 4. KONTEN 3 BAGIAN:
-   - activity_log: Tindakan nyata apa yang dikerjakan, fitur/alur apa yang diperbaiki/ditambahkan, dan manfaatnya bagi sistem atau pengguna.
-   - lesson_learned: Konsep pemecahan masalah, alur kerja sistem, atau wawasan ketelitian data yang dipelajari.
-   - obstacles: Satu tantangan praktis yang dihadapi (seperti ketelitian format tanggal, penyesuaian tata letak tampilan, atau validasi input) dan solusi konkret yang langsung diambil untuk mengatasinya.
+   - activity_log: Ceritakan pekerjaan nyata yang dilakukan, tujuan fitur/alur yang ditambahkan atau diperbaiki, serta dampaknya pada kemudahan operasional sistem.
+   - lesson_learned: Uraikan pemahaman alur sistem, kehati-hatian dalam validasi data, atau teknik analisis pemecahan masalah yang diperoleh dari pekerjaan tersebut.
+   - obstacles: Jelaskan 1 tantangan praktis yang dihadapi selama pengerjaan (misal: penyesuaian logika validasi, sinkronisasi tampilan di layar pengguna, atau penanganan kondisi data kosong) beserta langkah solusi konkret yang diambil untuk menyelesaikannya.
 
 5. OUTPUT HANYA JSON MURNI:
 {
@@ -292,7 +307,7 @@ ATURAN STRICT:
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `Berikut adalah ringkasan aktivitas/commit pengerjaan:\n${activitySummary}\n\nBuat laporan harian 3 bagian (activity_log, lesson_learned, obstacles). Bahasa Indonesia baku, tanpa menyebutkan nama file teknis atau kode, tanpa AI slop atau em dash, target panjang 100-180 karakter per bagian. Format JSON murni.`,
+            content: `Berikut adalah ringkasan aktivitas/commit pengerjaan:\n${activitySummary}\n\nBuat laporan harian 3 bagian (activity_log, lesson_learned, obstacles). Bahasa Indonesia formal dan natural, tanpa nama file/kode teknis, tanpa AI slop atau em dash. Panjang setiap bagian: 200-450 karakter (minimal 100 karakter, MAKSIMAL 500 KARAKTER). Format JSON murni.`,
           },
         ],
         stream: false,
