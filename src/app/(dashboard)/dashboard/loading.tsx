@@ -12,7 +12,9 @@ export default function DashboardLoading() {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 space-y-2"
+            className={`bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-2 ${
+              i === 5 ? "col-span-2 sm:col-span-2 lg:col-span-1" : ""
+            }`}
           >
             <div className="flex items-center justify-between">
               <div className="h-3 w-20 bg-surface rounded" />

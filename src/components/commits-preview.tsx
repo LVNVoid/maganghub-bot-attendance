@@ -115,7 +115,7 @@ export function CommitsPreview({
   return (
     <div className="bg-canvas-subtle border border-hairline rounded-md p-4 sm:p-5 space-y-4">
       {/* Header with Mode Switcher */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-hairline">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-sm bg-canvas-deep border border-hairline flex items-center justify-center text-primary shrink-0">
             <GitCommit className="w-3.5 h-3.5" />
@@ -135,23 +135,23 @@ export function CommitsPreview({
         </div>
 
         {/* View Toggle Buttons */}
-        <div className="flex items-center bg-canvas-deep p-0.5 rounded-sm border border-hairline shrink-0">
+        <div className="w-full sm:w-auto grid grid-cols-2 sm:flex items-center bg-canvas-deep p-0.5 rounded-sm border border-hairline shrink-0">
           <button
             type="button"
             onClick={() => {
               setViewMode("today");
               setCurrentPage(1);
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-xs font-medium transition-all ${
+            className={`flex items-center justify-center sm:justify-start gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-xs text-xs font-medium transition-all ${
               viewMode === "today"
                 ? "bg-surface-elevated text-ink-primary shadow-xs border border-hairline"
                 : "text-ink-muted hover:text-ink-secondary"
             }`}
           >
-            <Calendar className="w-3 h-3 text-primary" />
-            <span>Hari Ini</span>
+            <Calendar className="w-3 h-3 text-primary shrink-0" />
+            <span className="truncate">Hari Ini</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
                 todayCommits.length > 0
                   ? "bg-primary-soft text-primary font-semibold"
                   : "bg-surface text-ink-muted"
@@ -167,16 +167,16 @@ export function CommitsPreview({
               setViewMode("all");
               setCurrentPage(1);
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-xs font-medium transition-all ${
+            className={`flex items-center justify-center sm:justify-start gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-xs text-xs font-medium transition-all ${
               viewMode === "all"
                 ? "bg-surface-elevated text-ink-primary shadow-xs border border-hairline"
                 : "text-ink-muted hover:text-ink-secondary"
             }`}
           >
-            <History className="w-3 h-3 text-primary" />
-            <span>Semua Riwayat</span>
+            <History className="w-3 h-3 text-primary shrink-0" />
+            <span className="truncate">Semua Riwayat</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono shrink-0 ${
                 recentCommits.length > 0
                   ? "bg-primary-soft text-primary font-semibold"
                   : "bg-surface text-ink-muted"
@@ -237,7 +237,7 @@ export function CommitsPreview({
                     <GitBranch className="w-2.5 h-2.5" /> {c.branch}
                   </span>
                 </div>
-                <p className="text-ink-primary font-mono text-xs truncate" title={c.message}>
+                <p className="text-ink-primary font-mono text-xs line-clamp-2 break-words" title={c.message}>
                   {c.message}
                 </p>
                 <div className="text-[10px] text-ink-muted" suppressHydrationWarning>
@@ -272,12 +272,12 @@ export function CommitsPreview({
 
       {/* Pagination Footer */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2 border-t border-hairline text-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-2 border-t border-hairline text-xs">
           <span className="text-[11px] text-ink-muted">
             Menampilkan {startIndex + 1}–{Math.min(startIndex + PAGE_SIZE, totalCommits)} dari{" "}
             {totalCommits} commit
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
             <Button
               type="button"
               variant="outline"

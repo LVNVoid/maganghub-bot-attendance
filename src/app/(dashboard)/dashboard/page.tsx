@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Metric 1: Total Laporan */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Laporan Terkirim</span>
             <FileCheck className="w-4 h-4 text-primary" />
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Metric 2: Status Hari Ini */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Status Hari Ini</span>
             <Activity className="w-4 h-4 text-primary" />
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Metric 3: Kredensial */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Kredensial Monev</span>
             <KeyRound className="w-4 h-4 text-primary" />
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Metric 4: Status AI Generator */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+        <div className="bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Status Model AI</span>
             <Sparkles className="w-4 h-4 text-primary" />
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Metric 5: Mode Automasi */}
-        <div className="bg-canvas-subtle border border-hairline rounded-md p-4 space-y-2">
+        <div className="col-span-2 sm:col-span-2 lg:col-span-1 bg-canvas-subtle border border-hairline rounded-md p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
           <div className="flex items-center justify-between text-ink-secondary">
             <span className="text-xs font-medium">Mode Eksekusi</span>
             <Cpu className="w-4 h-4 text-primary" />

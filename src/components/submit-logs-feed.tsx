@@ -42,10 +42,10 @@ export function SubmitLogsFeed({ logs }: SubmitLogsFeedProps) {
           return (
             <div
               key={log.id}
-              className="flex items-start justify-between gap-3 p-3 rounded-sm bg-canvas-deep border border-hairline text-xs"
+              className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3 p-3 rounded-sm bg-canvas-deep border border-hairline text-xs"
             >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">
+              <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                <div className="mt-0.5 shrink-0">
                   {isSuccess ? (
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   ) : (
@@ -53,8 +53,8 @@ export function SubmitLogsFeed({ logs }: SubmitLogsFeedProps) {
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`font-semibold ${
                         isSuccess ? "text-ink-primary" : "text-error"
@@ -76,14 +76,14 @@ export function SubmitLogsFeed({ logs }: SubmitLogsFeedProps) {
                   </div>
 
                   {log.message && (
-                    <p className="text-[11px] text-ink-secondary">
+                    <p className="text-[11px] text-ink-secondary break-words leading-relaxed">
                       {log.message}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[10px] font-mono text-ink-muted shrink-0" suppressHydrationWarning>
+              <div className="flex items-center gap-1 text-[10px] font-mono text-ink-muted shrink-0 pl-6.5 sm:pl-0" suppressHydrationWarning>
                 <Clock className="w-3 h-3" />
                 {new Date(log.createdAt).toLocaleString("id-ID", {
                   day: "numeric",

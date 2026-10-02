@@ -46,7 +46,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 bg-canvas">
+        <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 md:p-8 pb-10 sm:pb-8 bg-canvas">
           <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">{children}</div>
         </main>
       </div>

@@ -110,11 +110,17 @@ export function QuickSubmitCard({
         <Button
           onClick={handleSubmit}
           disabled={loading || isSubmitted}
-          variant="emerald"
-          className="w-full md:w-auto gap-2 shrink-0 h-10 sm:h-9 text-xs font-semibold"
+          variant={isSubmitted ? "outline" : "emerald"}
+          className={`w-full md:w-auto gap-2 shrink-0 h-10 sm:h-9 text-xs font-semibold ${
+            isSubmitted
+              ? "border-hairline bg-surface/50 text-ink-secondary cursor-default hover:bg-surface/50 hover:text-ink-secondary"
+              : ""
+          }`}
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
+          ) : isSubmitted ? (
+            <CheckCircle2 className="w-4 h-4 text-primary" />
           ) : (
             <Send className="w-4 h-4" />
           )}
