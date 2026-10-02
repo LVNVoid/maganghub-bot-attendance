@@ -1,11 +1,12 @@
 "use server";
 
 import crypto from "node:crypto";
+import axios from "axios";
 import { revalidatePath } from "next/cache";
 import { invalidateCacheTag } from "@/lib/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { encrypt } from "@/lib/crypto";
+import { encrypt, decrypt } from "@/lib/crypto";
 import { saveCredentialSchema } from "@/schemas/credential-schema";
 import {
   addRepoSchema,
@@ -456,5 +457,102 @@ export async function deletePersonalGithubToken(): Promise<{
   } catch (err) {
     console.error("Delete personal GitHub token error:", err);
     return { error: "Gagal menghapus token GitHub." };
+  }
+}
+
+export async function testGithubConnection(): Promise<{
+  readonly success: boolean;
+  readonly message: string;
+}> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, message: "Unauthorized" };
+  }
+
+  const ghAccount = await db.account.findFirst({
+    where: {
+      userId: session.user.id,
+      provider: { in: ["github", "github_pat"] },
+    },
+    orderBy: { provider: "desc" },
+    select: {
+      provider: true,
+      access_token: true,
+    },
+  });
+
+  if (!ghAccount?.access_token) {
+    return {
+      success: false,
+      message: "Belum ada token atau akun GitHub yang terhubung.",
+    };
+  }
+
+  let token = ghAccount.access_token;
+  try {
+    const parsed = JSON.parse(ghAccount.access_token);
+    if (parsed.ciphertext && parsed.iv && parsed.authTag) {
+      token = decrypt(parsed.ciphertext, parsed.iv, parsed.authTag);
+    }
+  } catch {
+    // raw token
+  }
+
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    Authorization: `Bearer ${token}`,
+    "User-Agent": "MagangHub-Bot-Attendance",
+  };
+
+  try {
+    const userRes = await axios.get<{ login: string }>("https://api.github.com/user", {
+      headers,
+      timeout: 8000,
+    });
+
+    const loginName = userRes.data?.login || "Pengguna";
+
+    // Also check tracked repos access
+    const trackedRepos = await db.githubRepo.findMany({
+      where: { userId: session.user.id, isActive: true },
+      select: { repoFullName: true },
+    });
+
+    const failedRepos: string[] = [];
+    for (const r of trackedRepos) {
+      try {
+        await axios.get(`https://api.github.com/repos/${r.repoFullName}`, {
+          headers,
+          timeout: 6000,
+        });
+      } catch {
+        failedRepos.push(r.repoFullName);
+      }
+    }
+
+    if (failedRepos.length > 0) {
+      return {
+        success: false,
+        message: `Token valid (@${loginName}), tetapi gagal mengakses ${failedRepos.join(
+          ", "
+        )}. Pastikan token memiliki scope 'repo' untuk repository private.`,
+      };
+    }
+
+    return {
+      success: true,
+      message: `Koneksi GitHub berhasil (@${loginName}). Seluruh ${trackedRepos.length} repository dapat diakses!`,
+    };
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      return {
+        success: false,
+        message: "Token GitHub tidak valid atau kadaluarsa (401 Bad credentials). Harap login ulang atau masukkan Personal Access Token (PAT).",
+      };
+    }
+    return {
+      success: false,
+      message: "Gagal terhubung ke GitHub API. Silakan coba lagi.",
+    };
   }
 }

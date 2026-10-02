@@ -10,6 +10,7 @@ import {
   toggleTrackRepo,
   savePersonalGithubToken,
   deletePersonalGithubToken,
+  testGithubConnection,
 } from "@/actions/settings-actions";
 import {
   Github,
@@ -21,6 +22,8 @@ import {
   KeyRound,
   ShieldCheck,
   Info,
+  RefreshCw,
+  Edit3,
 } from "lucide-react";
 
 export interface TrackedRepo {
@@ -45,6 +48,8 @@ export function GithubRepoCard({
   const [tokenInput, setTokenInput] = useState("");
   const [savingToken, setSavingToken] = useState(false);
   const [deletingToken, setDeletingToken] = useState(false);
+  const [testingToken, setTestingToken] = useState(false);
+  const [showTokenInput, setShowTokenInput] = useState(false);
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -89,6 +94,7 @@ export function GithubRepoCard({
     } else {
       toast.success("Token GitHub berhasil disimpan.");
       setTokenInput("");
+      setShowTokenInput(false);
     }
     setSavingToken(false);
   };
@@ -102,6 +108,17 @@ export function GithubRepoCard({
       toast.success("Token GitHub dihapus.");
     }
     setDeletingToken(false);
+  };
+
+  const handleTestToken = async () => {
+    setTestingToken(true);
+    const res = await testGithubConnection();
+    if (res.success) {
+      toast.success(res.message, { duration: 4000 });
+    } else {
+      toast.error(res.message, { duration: 6000 });
+    }
+    setTestingToken(false);
   };
 
   return (
@@ -132,30 +149,61 @@ export function GithubRepoCard({
             </span>
           </div>
 
-          {hasToken && (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-soft text-primary border border-primary/20">
-                <ShieldCheck className="w-3 h-3" />
-                {tokenType === "OAUTH" ? "OAuth Terhubung (5.000 req/jam)" : "Personal Token Aktif"}
-              </span>
-              {tokenType === "PAT" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {hasToken && (
+              <>
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-soft text-primary border border-primary/20">
+                  <ShieldCheck className="w-3 h-3" />
+                  {tokenType === "OAUTH" ? "OAuth Terhubung (5.000 req/jam)" : "Personal Token Aktif"}
+                </span>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={testingToken}
+                  onClick={handleTestToken}
+                  className="h-7 px-2.5 text-xs text-ink-secondary hover:text-ink-primary"
+                  title="Uji koneksi GitHub API"
+                >
+                  {testingToken ? (
+                    <Loader2 className="w-3 h-3 animate-spin mr-1 text-primary" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3 mr-1 text-primary" />
+                  )}
+                  <span>Uji Akses</span>
+                </Button>
+
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  disabled={deletingToken}
-                  onClick={handleDeleteToken}
-                  className="h-6 px-2 text-[11px] text-error hover:bg-error/10"
+                  onClick={() => setShowTokenInput((prev) => !prev)}
+                  className="h-7 px-2 text-xs text-ink-muted hover:text-ink-primary"
                 >
-                  {deletingToken ? "Menghapus..." : "Hapus Token"}
+                  <Edit3 className="w-3 h-3 mr-1" />
+                  <span>{showTokenInput ? "Tutup" : "Ganti / Pasang PAT"}</span>
                 </Button>
-              )}
-            </div>
-          )}
+
+                {tokenType === "PAT" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={deletingToken}
+                    onClick={handleDeleteToken}
+                    className="h-7 px-2 text-xs text-error hover:bg-error/10"
+                  >
+                    {deletingToken ? "Menghapus..." : "Hapus Token"}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {!hasToken && (
-          <form onSubmit={handleSaveToken} className="flex flex-col sm:flex-row gap-2">
+        {(!hasToken || showTokenInput) && (
+          <form onSubmit={handleSaveToken} className="flex flex-col sm:flex-row gap-2 pt-1">
             <div className="flex-1">
               <Input
                 type="password"
@@ -163,22 +211,35 @@ export function GithubRepoCard({
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
                 required
-                className="text-xs h-9 sm:h-8"
+                className="text-base sm:text-xs h-9 sm:h-8"
               />
             </div>
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={savingToken || !tokenInput.trim()}
-              className="h-9 sm:h-8 px-3 text-xs shrink-0 font-medium"
-            >
-              {savingToken ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-              ) : (
-                <KeyRound className="w-3.5 h-3.5 mr-1" />
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={savingToken || !tokenInput.trim()}
+                className="h-9 sm:h-8 px-3 text-xs shrink-0 font-medium"
+              >
+                {savingToken ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                ) : (
+                  <KeyRound className="w-3.5 h-3.5 mr-1" />
+                )}
+                Simpan Token
+              </Button>
+              {hasToken && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTokenInput(false)}
+                  className="h-9 sm:h-8 px-2 text-xs text-ink-muted hover:text-ink-primary"
+                >
+                  Batal
+                </Button>
               )}
-              Simpan Token
-            </Button>
+            </div>
           </form>
         )}
 
