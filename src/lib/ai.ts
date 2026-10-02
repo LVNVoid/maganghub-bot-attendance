@@ -8,8 +8,18 @@ export interface GeneratedReport {
 
 const MIN_CHAR_LENGTH = 100;
 
+export function cleanReportText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/[—–]/g, ", ")
+    .replace(/--+/g, ", ")
+    .replace(/[`*#]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function ensureMinLength(text: string, fallbackAddition: string): string {
-  let cleaned = text.trim();
+  let cleaned = cleanReportText(text);
   if (cleaned.length >= MIN_CHAR_LENGTH) {
     return cleaned;
   }
@@ -17,6 +27,19 @@ export function ensureMinLength(text: string, fallbackAddition: string): string 
   // Append professional contextual sentence to meet >= 100 chars
   while (cleaned.length < MIN_CHAR_LENGTH) {
     cleaned += ` ${fallbackAddition}`;
+  }
+  return cleaned;
+}
+
+function cleanScope(scope: string): string {
+  if (!scope) return "";
+  const cleaned = scope.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ").trim();
+  if (
+    /^(ts|tsx|js|jsx|json|css|sql|db|repo|lib|action|actions|service|services|component|components|util|utils)$/i.test(
+      cleaned
+    )
+  ) {
+    return "";
   }
   return cleaned;
 }
@@ -39,41 +62,45 @@ function translateCommit(rawMsg: string): {
     desc = match[3].trim();
   }
 
+  const humanScope = cleanScope(scope);
+
   let category: "feat" | "fix" | "refactor" | "docs" | "config" | "general" = "general";
   let actionText = "";
 
   if (type === "fix" || type === "bugfix") {
     category = "fix";
-    actionText = scope
-      ? `Melakukan perbaikan dan penyesuaian kendala pada modul ${scope}`
-      : "Melakukan perbaikan kendala teknis pada sistem";
+    actionText = humanScope
+      ? `Melakukan perbaikan kendala pada bagian ${humanScope}`
+      : "Melakukan perbaikan kendala operasional pada sistem";
   } else if (type === "feat" || type === "feature") {
     category = "feat";
-    actionText = scope
-      ? `Mengembangkan dan menambahkan fungsionalitas baru pada modul ${scope}`
-      : "Mengembangkan fungsionalitas baru pada sistem";
+    actionText = humanScope
+      ? `Menambahkan fungsi baru pada bagian ${humanScope}`
+      : "Menambahkan fungsi baru untuk mendukung alur kerja pengguna";
   } else if (type === "refactor") {
     category = "refactor";
-    actionText = scope
-      ? `Melakukan restrukturisasi dan optimasi kode pada komponen ${scope}`
-      : "Melakukan restrukturisasi dan perapian arsitektur kode aplikasi";
+    actionText = humanScope
+      ? `Merapikan dan menata ulang alur kerja ${humanScope}`
+      : "Merapikan dan menyederhanakan alur kerja sistem";
   } else if (type === "docs") {
     category = "docs";
-    actionText = scope
-      ? `Menyusun dan memperbarui dokumentasi teknis terkait ${scope}`
-      : "Menyusun dan memperbarui dokumentasi teknis proyek";
+    actionText = humanScope
+      ? `Memperbarui panduan alur kerja ${humanScope}`
+      : "Memperbarui catatan dan panduan alur kerja sistem";
   } else if (type === "chore" || type === "build" || type === "ci" || type === "config") {
     category = "config";
-    actionText = scope
-      ? `Melakukan konfigurasi lingkungan dan build sistem pada ${scope}`
-      : "Melakukan konfigurasi lingkungan dan pemeliharaan dependensi sistem";
+    actionText = humanScope
+      ? `Menyesuaikan pengaturan konfigurasi pada ${humanScope}`
+      : "Menyesuaikan pengaturan konfigurasi dan lingkungan kerja sistem";
   } else {
-    actionText = scope
-      ? `Melakukan penyesuaian teknis pada bagian ${scope}`
-      : "Melakukan penyesuaian teknis pada alur kerja aplikasi";
+    actionText = humanScope
+      ? `Melakukan penyesuaian pada bagian ${humanScope}`
+      : "Melakukan penyesuaian pada alur kerja sistem";
   }
 
   let translatedDesc = desc
+    .replace(/\b[a-f0-9]{7,40}\b/gi, "")
+    .replace(/[a-zA-Z0-9_\-\/]+\.(ts|tsx|js|jsx|json|prisma|sql|css|md)\b/gi, "modul terkait")
     .replace(/\bupdate live demo url for\b/gi, "pembaruan tautan demo langsung untuk")
     .replace(/\bupdate\b/gi, "pembaruan")
     .replace(/\badd\b/gi, "penambahan")
@@ -88,7 +115,9 @@ function translateCommit(rawMsg: string): {
     .replace(/\bfor\b/gi, "pada")
     .replace(/\bto\b/gi, "ke")
     .replace(/\band\b/gi, "serta")
-    .replace(/\bwith\b/gi, "dengan");
+    .replace(/\bwith\b/gi, "dengan")
+    .replace(/\s+/g, " ")
+    .trim();
 
   translatedDesc = translatedDesc.charAt(0).toLowerCase() + translatedDesc.slice(1);
 
@@ -113,13 +142,13 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
   if (parsedCommits.length > 0) {
     const descriptions = parsedCommits.map((c) => c.text).join(" Selain itu, ");
     activity_log = ensureMinLength(
-      descriptions,
-      "Seluruh tahapan implementasi telah diuji dan diverifikasi secara lokal untuk memastikan stabilitas serta kesiapan fungsionalitas sistem berjalan lancar."
+      cleanReportText(descriptions),
+      "Seluruh pengujian dilakukan secara lokal guna memastikan fungsionalitas aplikasi berjalan sesuai target."
     );
   } else {
     activity_log = ensureMinLength(
-      "Melakukan penyesuaian logika sistem, refactoring komponen kode, dan pengujian berkala pada antarmuka aplikasi secara lokal.",
-      "Aktivitas ini dilakukan untuk memastikan seluruh alur interaksi pengguna berjalan dengan stabil tanpa hambatan teknis."
+      "Melakukan penyesuaian alur kerja sistem, perapian komponen antarmuka, dan pengujian fitur aplikasi secara lokal.",
+      "Langkah ini memastikan setiap alur interaksi pengguna dapat digunakan dengan stabil dan mudah."
     );
   }
 
@@ -128,32 +157,32 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
   switch (primaryCategory) {
     case "fix":
       lesson_learned = ensureMinLength(
-        "Memahami pentingnya ketelitian dalam validasi tautan eksternal, penelusuran alur integrasi data, serta teknik verifikasi endpoint produksi agar layanan yang diakses pengguna tetap stabil dan akurat.",
-        "Pembelajaran ini memperkuat kemampuan analisis akar masalah dan pemecahan bug secara sistematis pada sistem operasional."
+        "Memahami alur pemeriksaan kendala teknis secara terstruktur dan langkah verifikasi perbaikan pada sistem.",
+        "Hal ini melatih ketelitian dalam menganalisis akar masalah agar layanan aplikasi tetap berjalan lancar."
       );
       break;
     case "feat":
       lesson_learned = ensureMinLength(
-        "Mempelajari perancangan antarmuka responsif dan penyelarasan logika bisnis baru, penanganan validasi masukan data, serta alur pengujian fungsional sebelum fitur digabungkan ke cabang utama sistem.",
-        "Hal ini memperdalam wawasan tentang standar rekayasa perangkat lunak yang terukur dan ramah pengguna."
+        "Mempelajari perancangan antarmuka yang ramah pengguna serta penyesuaian validasi masukan data pada aplikasi.",
+        "Wawasan ini membantu memahami kebutuhan pengguna dan alur kerja fungsional yang mudah dipahami."
       );
       break;
     case "refactor":
       lesson_learned = ensureMinLength(
-        "Memperdalam prinsip Clean Code dan pemisahan tanggung jawab komponen modul, efisiensi pembacaan kode, serta teknik perapian struktur direktori agar aplikasi lebih mudah dikembangkan dan dirawat dalam jangka panjang.",
-        "Penerapan refactoring ini penting guna meminimalkan akumulasi technical debt pada basis kode aplikasi."
+        "Memahami teknik perapian alur modul dan penataan struktur logika aplikasi agar lebih mudah dipelihara.",
+        "Penerapan ini penting agar pemeliharaan sistem ke depan dapat dilakukan secara efektif."
       );
       break;
     case "config":
       lesson_learned = ensureMinLength(
-        "Memahami standarisasi alur otomatisasi build sistem, pengelolaan dependensi aplikasi, serta pentingnya konfigurasi variabel lingkungan yang aman dan konsisten antar tahap pengembangan.",
-        "Pengetahuan ini menunjang kesiapan pipeline integrasi dan perilisan aplikasi secara berkelanjutan."
+        "Memahami pengelolaan parameter konfigurasi dan keselarasan lingkungan kerja aplikasi agar berjalan konsisten.",
+        "Pengetahuan ini mendukung kelancaran pemeliharaan sistem pada setiap tahap pengembangan."
       );
       break;
     default:
       lesson_learned = ensureMinLength(
-        "Memperoleh pemahaman komprehensif mengenai siklus pemeliharaan kode sumber, pentingnya dokumentasi riwayat perubahan yang terstruktur, serta koordinasi teknis dalam memastikan kualitas perangkat lunak.",
-        "Pembelajaran ini meningkatkan kedisiplinan rekayasa perangkat lunak dalam alur kerja profesional."
+        "Memahami pentingnya ketelitian dalam penataan alur kerja aplikasi dan dokumentasi catatan perubahan berkala.",
+        "Pembelajaran ini meningkatkan kedisiplinan serta kualitas kerja dalam menyelesaikan target tugas."
       );
   }
 
@@ -162,39 +191,39 @@ export function generateFallbackReport(activitySummary: string): GeneratedReport
   switch (primaryCategory) {
     case "fix":
       obstacles = ensureMinLength(
-        "Menemukan ketidaksesuaian alamat tautan atau respons server saat pengujian awal, yang berhasil diselesaikan dengan memeriksa konfigurasi domain serta memperbarui URL tujuan secara tepat.",
-        "Tidak ada kendala kritis lain yang menghambat penyelesaian tugas pemeliharaan sistem hari ini."
+        "Menemukan kendala saat proses pengujian awal, yang berhasil diselesaikan dengan pemeriksaan alur dan penyesuaian data.",
+        "Pengujian lanjutan memastikan fungsi yang diperbaiki telah berjalan sesuai harapan."
       );
       break;
     case "feat":
       obstacles = ensureMinLength(
-        "Menghadapi tantangan dalam menyelaraskan format data antar komponen antarmuka, yang berhasil diatasi melalui penyesuaian tipe data dan pengujian alur interaksi secara menyeluruh.",
-        "Seluruh fungsionalitas baru kini telah terintegrasi dengan baik dan siap digunakan."
+        "Memerlukan penyesuaian tampilan agar nyaman di berbagai perangkat, yang diatasi dengan uji responsif berkala.",
+        "Seluruh fungsionalitas baru kini dapat diakses dengan baik oleh pengguna."
       );
       break;
     case "refactor":
       obstacles = ensureMinLength(
-        "Perlu memastikan proses refactoring tidak mengubah alur kerja fungsi yang sudah berjalan sebelumnya, yang diselesaikan dengan melakukan pengetesan regresi secara bertahap pada setiap modul terkait.",
-        "Seluruh pengujian menunjukkan hasil yang konsisten tanpa menimbulkan efek samping pada fungsi lain."
+        "Perlu memastikan perapian alur tidak mengganggu fungsi yang sudah ada, yang diselesaikan dengan uji coba bertahap.",
+        "Hasil pengujian menunjukkan alur sistem tetap bekerja konsisten tanpa kendala."
       );
       break;
     case "config":
       obstacles = ensureMinLength(
-        "Menyesuaikan perbedaan konfigurasi antara lingkungan pengembangan lokal dan server tujuan, yang diatasi dengan standarisasi parameter konfigurasi dan analisis log secara teliti.",
-        "Kendala konfigurasi telah teratasi sepenuhnya dan build sistem berjalan tanpa hambatan."
+        "Menyesuaikan parameter konfigurasi lingkungan aplikasi, yang diselesaikan dengan pemeriksaan panduan teknis.",
+        "Pengaturan sistem berhasil diselaraskan tanpa kendala lanjutan."
       );
       break;
     default:
       obstacles = ensureMinLength(
-        "Menghadapi penyesuaian minor pada sinkronisasi alur kerja antarmuka dan data, yang berhasil diatasi secara mandiri melalui pengecekan ulang kode dan pengujian berkala.",
-        "Pengerjaan tugas harian dapat diselesaikan sesuai target yang telah direncanakan."
+        "Menghadapi penyesuaian minor pada sinkronisasi alur kerja, yang diselesaikan melalui pengecekan ulang secara teliti.",
+        "Pekerjaan harian dapat diselesaikan dengan baik sesuai target yang ditentukan."
       );
   }
 
   return {
-    activity_log,
-    lesson_learned,
-    obstacles,
+    activity_log: cleanReportText(activity_log),
+    lesson_learned: cleanReportText(lesson_learned),
+    obstacles: cleanReportText(obstacles),
   };
 }
 
@@ -222,19 +251,32 @@ export async function generateReportFromActivity(
     userConfig?.modelName || process.env.OPENAI_MODEL || "combo-flash";
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
-  const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI.
-Tugas Anda adalah mengubah ringkasan commit/aktivitas teknis pengguna menjadi laporan harian resmi, terstruktur, kontekstual, dan mudah dipahami oleh pembimbing maupun manajemen.
+  const systemPrompt = `Anda adalah asisten khusus penulisan laporan harian magang kerja Kemnaker RI untuk dibaca oleh pembimbing lapangan dan HRD non-teknis.
+Tugas Anda: Mengubah catatan pengerjaan/commit teknis pengguna menjadi laporan harian resmi 3 bagian yang berorientasi hasil, bahasa Indonesia baku, padat, dan bebas dari jargon kode tingkat rendah serta AI slop.
 
-ATURAN UTAMA:
-1. Format Wajib 3 Bagian (JSON):
-   - activity_log: Uraian aktivitas pengerjaan nyata yang dikerjakan hari ini berdasarkan commit yang ada. Tulis secara aktif, deskriptif, dan jelaskan tujuannya tanpa mencantumkan teks pembuka klise/generik. Minimal 100 karakter.
-   - lesson_learned: Pembelajaran teknis atau profesional yang diperoleh dari pengerjaan aktivitas tersebut (pemahaman arsitektur, teknik penanganan error, validasi data, dll.). Minimal 100 karakter.
-   - obstacles: Tantangan logis yang dihadapi selama pengerjaan dan solusi konkret yang dilakukan untuk mengatasinya. Minimal 100 karakter.
-2. Gaya Bahasa:
-   - Bahasa Indonesia baku, formal, profesional.
-   - DILARANG menggunakan kalimat pembuka klise atau boilerplate berulang (seperti "Melaksanakan pengerjaan tugas pengembangan perangkat lunak sesuai target sprint, dengan fokus aktivitas:").
-   - Langsung jelaskan pekerjaan nyata yang dilakukan dan dampaknya bagi sistem.
-3. Output HANYA format JSON murni:
+ATURAN STRICT:
+1. ZERO LOW-LEVEL CODE JARGON:
+   - DILARANG menyebutkan nama file (*.ts, *.tsx, *.json, *.prisma, *.css, *.md), path direktori (src/...), nama fungsi/metode (generateReportDraft, fetchCommits), nama hook (useState, useEffect), variabel, tipe data, SQL query, branch git, atau hash commit.
+   - Terjemahkan aktivitas teknis menjadi istilah alur kerja fungsional dan manfaat operasional bagi pengguna atau sistem.
+   - Contoh DILARANG: "Mengubah file report-actions.ts dan fungsi fetchRepoCommits dengan menambahkan parameter fallbackToPrevious."
+   - Contoh BENAR: "Menambahkan fitur konfirmasi otomatis saat data commit hari ini belum ada, sehingga sistem dapat menggunakan riwayat pengerjaan sebelumnya untuk menyusun laporan."
+
+2. ZERO AI SLOP & ANTI-KLISE:
+   - DILARANG menggunakan tanda em dash (—) atau tanda hubung ganda (--). Gunakan titik, koma, atau tanda kurung biasa.
+   - DILARANG menggunakan kata-kata klise AI: "mulus", "seamless", "fondasi yang kokoh", "krusial", "perjalanan transformatif", "tapestry", "lanskap", "tidak hanya ... tetapi juga", "membuka potensi", "langkah signifikan", "revolusioner".
+   - DILARANG menggunakan kalimat pembuka klise ("Pada hari ini...", "Melaksanakan tugas pengembangan..."). Langsung jelaskan pekerjaan inti.
+   - DILARANG menggunakan kalimat penutup optimisme palsu ("Hal ini membuktikan dedikasi...", "Masa depan sistem terlihat cerah...").
+
+3. TARGET PANJANG (100 - 180 KARAKTER PER BAGIAN):
+   - Setiap bagian WAJIB memenuhi syarat minimal 100 karakter.
+   - Jaga tetap ringkas dan padat: 100 hingga 180 karakter (1 sampai 2 kalimat substantif). Hindari narasi bertele-tele atau esai panjang (> 220 karakter).
+
+4. KONTEN 3 BAGIAN:
+   - activity_log: Tindakan nyata apa yang dikerjakan, fitur/alur apa yang diperbaiki/ditambahkan, dan manfaatnya bagi sistem atau pengguna.
+   - lesson_learned: Konsep pemecahan masalah, alur kerja sistem, atau wawasan ketelitian data yang dipelajari.
+   - obstacles: Satu tantangan praktis yang dihadapi (seperti ketelitian format tanggal, penyesuaian tata letak tampilan, atau validasi input) dan solusi konkret yang langsung diambil untuk mengatasinya.
+
+5. OUTPUT HANYA JSON MURNI:
 {
   "activity_log": "...",
   "lesson_learned": "...",
@@ -250,7 +292,7 @@ ATURAN UTAMA:
           { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `Berikut adalah ringkasan aktivitas/commit hari ini:\n${activitySummary}\n\nBuat laporan magang harian 3 bagian (masing-masing minimal 100 karakter).`,
+            content: `Berikut adalah ringkasan aktivitas/commit pengerjaan:\n${activitySummary}\n\nBuat laporan harian 3 bagian (activity_log, lesson_learned, obstacles). Bahasa Indonesia baku, tanpa menyebutkan nama file teknis atau kode, tanpa AI slop atau em dash, target panjang 100-180 karakter per bagian. Format JSON murni.`,
           },
         ],
         stream: false,
@@ -275,18 +317,22 @@ ATURAN UTAMA:
     content = content.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
     const parsed = JSON.parse(content);
 
+    const rawActivity = cleanReportText(parsed.activity_log || "");
+    const rawLearning = cleanReportText(parsed.lesson_learned || "");
+    const rawObstacles = cleanReportText(parsed.obstacles || "");
+
     return {
       activity_log: ensureMinLength(
-        parsed.activity_log || "",
-        "Seluruh tahapan pengerjaan telah diselesaikan dan diverifikasi dengan baik sesuai target yang ditentukan."
+        rawActivity,
+        "Pekerjaan telah diuji secara menyeluruh untuk memastikan seluruh alur fungsionalitas sistem berjalan dengan baik."
       ),
       lesson_learned: ensureMinLength(
-        parsed.lesson_learned || "",
-        "Hal ini memberikan pemahaman mendalam tentang praktik terbaik dalam pengembangan perangkat lunak modern."
+        rawLearning,
+        "Pembelajaran ini memperkuat pemahaman mengenai alur kerja aplikasi dan pentingnya ketelitian dalam pengujian."
       ),
       obstacles: ensureMinLength(
-        parsed.obstacles || "",
-        "Tantangan teknis berhasil diatasi secara mandiri melalui analisis dokumentasi resmi dan pengujian berulang."
+        rawObstacles,
+        "Kendala teknis berhasil diselesaikan dengan baik melalui penyesuaian alur kerja serta pengujian ulang."
       ),
     };
   } catch (error) {

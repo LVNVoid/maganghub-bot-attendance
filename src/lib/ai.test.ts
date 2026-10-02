@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { ensureMinLength, generateFallbackReport, generateReportFromActivity } from "./ai";
+import { ensureMinLength, generateFallbackReport, generateReportFromActivity, cleanReportText } from "./ai";
 
 describe("AI Report Generator Module", () => {
+  it("cleanReportText should strip em dashes, double hyphens, and markdown syntax", () => {
+    const raw = "Menambahkan fitur — sangat penting -- untuk `sistem` **pengguna**.";
+    expect(cleanReportText(raw)).toBe("Menambahkan fitur , sangat penting , untuk sistem pengguna.");
+  });
+
   it("ensureMinLength should keep text >= 100 chars untouched", () => {
     const longText = "a".repeat(120);
     expect(ensureMinLength(longText, "padding")).toBe(longText);
