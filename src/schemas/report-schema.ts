@@ -28,6 +28,7 @@ export type SaveReportPayload = z.infer<typeof saveReportSchema>;
 
 export const generateReportSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD").optional(),
+  fallbackToPrevious: z.boolean().optional(),
 });
 
 export type GenerateReportPayload = z.infer<typeof generateReportSchema>;

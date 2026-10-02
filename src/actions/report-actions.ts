@@ -16,7 +16,8 @@ import {
 import type { ApiResponse } from "@/types/api";
 
 export async function generateReportDraft(
-  dateStr: string
+  dateStr: string,
+  options?: { fallbackToPrevious?: boolean }
 ): Promise<ApiResponse<ReportItem>> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -26,7 +27,10 @@ export async function generateReportDraft(
     };
   }
 
-  const parsed = generateReportSchema.safeParse({ date: dateStr });
+  const parsed = generateReportSchema.safeParse({
+    date: dateStr,
+    fallbackToPrevious: options?.fallbackToPrevious,
+  });
   if (!parsed.success) {
     return {
       success: false,
@@ -40,6 +44,7 @@ export async function generateReportDraft(
   const userId = session.user.id;
   const targetDate = parsed.data.date || dateStr;
   const dateObj = new Date(targetDate);
+  const fallbackToPrevious = !!parsed.data.fallbackToPrevious;
 
   try {
     const existingReport = await db.report.findUnique({
@@ -61,7 +66,29 @@ export async function generateReportDraft(
       };
     }
 
-    const groups = await fetchAllTrackedCommitsForUser(userId, targetDate);
+    const trackedReposCount = await db.githubRepo.count({
+      where: { userId, isActive: true },
+    });
+
+    let groups = await fetchAllTrackedCommitsForUser(userId, targetDate);
+    const totalCommits = groups.reduce((acc, g) => acc + g.commits.length, 0);
+
+    if (trackedReposCount > 0 && totalCommits === 0 && !fallbackToPrevious) {
+      return {
+        success: false,
+        error: {
+          code: "NO_COMMITS_TODAY",
+          message: "Commit hari ini belum ada di repository.",
+        },
+      };
+    }
+
+    if (trackedReposCount > 0 && totalCommits === 0 && fallbackToPrevious) {
+      groups = await fetchAllTrackedCommitsForUser(userId, targetDate, {
+        fallbackToPrevious: true,
+      });
+    }
+
     const summary = formatCommitsToActivitySummary(groups);
     const userAiConfig = await getDecryptedUserAiConfig(userId);
     const generated = await generateReportFromActivity(summary, userAiConfig);

@@ -52,12 +52,14 @@ async function fetchCommitsFromAtomFeed({
   branch,
   since,
   until,
+  fallbackToPrevious = false,
 }: {
   owner: string;
   repo: string;
   branch: string;
   since: string;
   until: string;
+  fallbackToPrevious?: boolean;
 }): Promise<{ commits: GitHubCommit[]; detectedBranch: string } | null> {
   const candidateBranches = [branch, "main", "master"].filter(
     (b, idx, arr) => arr.indexOf(b) === idx
@@ -90,7 +92,11 @@ async function fetchCommitsFromAtomFeed({
         if (!sha || !updated) continue;
 
         const commitTime = new Date(updated).getTime();
-        if (commitTime >= sinceTime && commitTime <= untilTime) {
+        const inWindow = fallbackToPrevious
+          ? commitTime <= untilTime
+          : commitTime >= sinceTime && commitTime <= untilTime;
+
+        if (inWindow) {
           rawCommits.push({
             sha,
             message: cleanCommitMessage(title || ""),
@@ -98,6 +104,10 @@ async function fetchCommitsFromAtomFeed({
             date: updated,
             url: link || `https://github.com/${owner}/${repo}/commit/${sha}`,
           });
+
+          if (fallbackToPrevious && rawCommits.length >= 15) {
+            break;
+          }
         }
       }
 
@@ -117,12 +127,14 @@ export async function fetchRepoCommits({
   branch = "main",
   date,
   token,
+  fallbackToPrevious = false,
 }: {
   owner: string;
   repo: string;
   branch?: string;
   date: string; // YYYY-MM-DD
   token?: string;
+  fallbackToPrevious?: boolean;
 }): Promise<{ commits: GitHubCommit[]; detectedBranch: string }> {
   // Use Jakarta timezone (WIB, UTC+7) window
   const since = new Date(`${date}T00:00:00+07:00`).toISOString();
@@ -136,6 +148,7 @@ export async function fetchRepoCommits({
       branch,
       since,
       until,
+      fallbackToPrevious,
     });
     if (atomResult) {
       return atomResult;
@@ -152,6 +165,14 @@ export async function fetchRepoCommits({
   }
 
   let activeBranch = branch;
+  const commitParams: Record<string, string | number> = {
+    sha: activeBranch,
+    until,
+    per_page: fallbackToPrevious ? 15 : 50,
+  };
+  if (!fallbackToPrevious) {
+    commitParams.since = since;
+  }
 
   try {
     let response;
@@ -159,12 +180,7 @@ export async function fetchRepoCommits({
       response = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/commits`,
         {
-          params: {
-            sha: activeBranch,
-            since,
-            until,
-            per_page: 50,
-          },
+          params: commitParams,
           headers,
           timeout: 10000,
         }
@@ -179,15 +195,11 @@ export async function fetchRepoCommits({
         const defaultBranch = repoInfo.data?.default_branch || "master";
         if (defaultBranch !== activeBranch) {
           activeBranch = defaultBranch;
+          commitParams.sha = activeBranch;
           response = await axios.get(
             `https://api.github.com/repos/${owner}/${repo}/commits`,
             {
-              params: {
-                sha: activeBranch,
-                since,
-                until,
-                per_page: 50,
-              },
+              params: commitParams,
               headers,
               timeout: 10000,
             }
@@ -218,6 +230,7 @@ export async function fetchRepoCommits({
       branch: activeBranch,
       since,
       until,
+      fallbackToPrevious,
     });
     if (atomFallback) {
       return atomFallback;
@@ -240,7 +253,8 @@ export async function fetchRepoCommits({
 
 export async function fetchAllTrackedCommitsForUser(
   userId: string,
-  date: string
+  date: string,
+  options?: { fallbackToPrevious?: boolean }
 ): Promise<RepoCommitGroup[]> {
   const trackedRepos = await db.githubRepo.findMany({
     where: { userId, isActive: true },
@@ -285,6 +299,7 @@ export async function fetchAllTrackedCommitsForUser(
           branch: r.branch,
           date,
           token,
+          fallbackToPrevious: options?.fallbackToPrevious,
         });
 
         // Update repo branch in DB if auto-detected different branch

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { generateReportDraft, saveReportDraft } from "@/actions/report-actions";
 import type { ReportItem } from "@/schemas/report-schema";
 import { Sparkles, Save, CheckCircle2, AlertTriangle, Loader2, Lock } from "lucide-react";
@@ -38,6 +39,7 @@ export function ReportForm({
   const [obstacles, setObstacles] = useState(initialReport?.obstacles || "");
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showNoCommitDialog, setShowNoCommitDialog] = useState(false);
 
   const handleDateSelect = (newDate: string) => {
     setDate(newDate);
@@ -47,7 +49,7 @@ export function ReportForm({
     });
   };
 
-  const handleGenerateAI = async () => {
+  const handleGenerateAI = async (fallbackToPrevious = false) => {
     if (isSubmitted) {
       toast.error("Laporan tanggal ini sudah berstatus SUBMITTED dan terkunci.");
       return;
@@ -55,9 +57,13 @@ export function ReportForm({
 
     setGenerating(true);
 
-    const res = await generateReportDraft(date);
+    const res = await generateReportDraft(date, { fallbackToPrevious });
     if (!res.success) {
-      toast.error(res.error.message);
+      if (res.error?.code === "NO_COMMITS_TODAY") {
+        setShowNoCommitDialog(true);
+      } else {
+        toast.error(res.error.message);
+      }
     } else if (res.data) {
       setActivity(res.data.activity);
       setLearning(res.data.learning);
@@ -167,7 +173,7 @@ export function ReportForm({
               type="button"
               variant="secondary"
               size="sm"
-              onClick={handleGenerateAI}
+              onClick={() => handleGenerateAI(false)}
               disabled={generating || isSubmitted}
               className="gap-1.5 h-10 sm:h-8 px-3 text-xs border-primary/30 text-primary hover:bg-primary-soft shrink-0 disabled:opacity-50"
             >
@@ -278,6 +284,20 @@ export function ReportForm({
           </Button>
         </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={showNoCommitDialog}
+        onClose={() => setShowNoCommitDialog(false)}
+        onConfirm={async () => {
+          setShowNoCommitDialog(false);
+          await handleGenerateAI(true);
+        }}
+        title="Commit Hari Ini Belum Ada"
+        description="Commit untuk tanggal ini belum ada di repository. Apakah Anda ingin membuat laporan menggunakan riwayat commit sebelumnya?"
+        confirmText="Ya, Ambil Commit Sebelumnya"
+        cancelText="Batal"
+        variant="warning"
+      />
     </div>
   );
 }
