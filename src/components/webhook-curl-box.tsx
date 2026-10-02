@@ -49,10 +49,10 @@ export function WebhookCurlBox({
 
   const baseUrl = origin || "https://maganghub-bot-attendance.vercel.app";
 
-  const curlCommand = `curl -s -X POST ${baseUrl}/api/cron/trigger \\
+  const curlCommand = `curl -sS -X POST ${baseUrl}/api/cron/trigger \\
   -H "Authorization: Bearer ${currentKey}"`;
 
-  const singleLineCurl = `curl -s -X POST ${baseUrl}/api/cron/trigger -H "Authorization: Bearer ${currentKey}"`;
+  const singleLineCurl = `/usr/bin/curl -sS -X POST ${baseUrl}/api/cron/trigger -H "Authorization: Bearer ${currentKey}"`;
 
   const crontabSnippetWib = `# MagangHub Bot: Setiap ${daysLabel} jam ${autoSubmitTime} WIB
 CRON_TZ=Asia/Jakarta

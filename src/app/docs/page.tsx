@@ -403,13 +403,14 @@ export default function DocsPage() {
 
                   <div className="relative">
                     <pre className="bg-canvas-deep border border-hairline rounded-md p-4 text-[11px] font-mono text-ink-primary overflow-x-auto">
-{`50 13 * * 1-6 curl -s -X POST https://domain-anda.com/api/cron/trigger \\
+{`CRON_TZ=Asia/Jakarta
+50 13 * * 1-6 /usr/bin/curl -sS -X POST https://domain-anda.com/api/cron/trigger \\
   -H "Authorization: Bearer <WEBHOOK_TOKEN_ANDA>" >> /var/log/maganghub.log 2>&1`}
                     </pre>
                     <button
                       onClick={() =>
                         copyToClipboard(
-                          `50 13 * * 1-6 curl -s -X POST https://domain-anda.com/api/cron/trigger -H "Authorization: Bearer <WEBHOOK_TOKEN_ANDA>" >> /var/log/maganghub.log 2>&1`,
+                          `CRON_TZ=Asia/Jakarta\n50 13 * * 1-6 /usr/bin/curl -sS -X POST https://domain-anda.com/api/cron/trigger -H "Authorization: Bearer <WEBHOOK_TOKEN_ANDA>" >> /var/log/maganghub.log 2>&1`,
                           "cron"
                         )
                       }
