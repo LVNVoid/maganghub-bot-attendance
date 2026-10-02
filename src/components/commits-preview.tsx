@@ -240,7 +240,7 @@ export function CommitsPreview({
                 <p className="text-ink-primary font-mono text-xs truncate" title={c.message}>
                   {c.message}
                 </p>
-                <div className="text-[10px] text-ink-muted">
+                <div className="text-[10px] text-ink-muted" suppressHydrationWarning>
                   oleh {c.author} &bull;{" "}
                   {new Date(c.date).toLocaleDateString("id-ID", {
                     day: "2-digit",

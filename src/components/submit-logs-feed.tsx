@@ -83,7 +83,7 @@ export function SubmitLogsFeed({ logs }: SubmitLogsFeedProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[10px] font-mono text-ink-muted shrink-0">
+              <div className="flex items-center gap-1 text-[10px] font-mono text-ink-muted shrink-0" suppressHydrationWarning>
                 <Clock className="w-3 h-3" />
                 {new Date(log.createdAt).toLocaleString("id-ID", {
                   day: "numeric",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -19,12 +19,17 @@ export function WebhookCurlBox({
   autoSubmitTime = "14:00",
   scheduleDays = "1,2,3,4,5,6",
 }: WebhookCurlBoxProps) {
+  const [origin, setOrigin] = useState("");
   const [currentKey, setCurrentKey] = useState(webhookKey);
   const [copied, setCopied] = useState(false);
   const [copiedCron, setCopiedCron] = useState(false);
   const [tzMode, setTzMode] = useState<"wib" | "utc">("wib");
   const [regenerating, setRegenerating] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   // Compute crontab time from autoSubmitTime (HH:MM) in WIB (UTC+7)
   const [hour = "14", minute = "00"] = autoSubmitTime.split(":");
@@ -42,10 +47,7 @@ export function WebhookCurlBox({
   const cronWib = `${wibMinute} ${wibHour} * * ${cronDays}`;
   const cronUtc = `${utcMinute} ${utcHour} * * ${cronDays}`;
 
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://maganghub-bot-attendance.vercel.app";
+  const baseUrl = origin || "https://maganghub-bot-attendance.vercel.app";
 
   const curlCommand = `curl -s -X POST ${baseUrl}/api/cron/trigger \\
   -H "Authorization: Bearer ${currentKey}"`;
@@ -108,7 +110,7 @@ ${cronUtc} ${singleLineCurl} >> /var/log/maganghub.log 2>&1`;
       </div>
 
       <div className="relative group bg-canvas-deep border border-hairline rounded-sm p-3 font-mono text-xs text-ink-primary overflow-x-auto">
-        <pre className="whitespace-pre-wrap break-all leading-relaxed">
+        <pre className="whitespace-pre-wrap break-all leading-relaxed" suppressHydrationWarning>
           {curlCommand}
         </pre>
         <button
@@ -156,7 +158,7 @@ ${cronUtc} ${singleLineCurl} >> /var/log/maganghub.log 2>&1`;
 
         {/* Crontab Snippet Code Block */}
         <div className="relative group bg-canvas-deep border border-hairline rounded-sm p-3 font-mono text-[11px] text-ink-muted overflow-x-auto">
-          <pre className="whitespace-pre-wrap break-all leading-relaxed font-mono">
+          <pre className="whitespace-pre-wrap break-all leading-relaxed font-mono" suppressHydrationWarning>
             {activeCronSnippet}
           </pre>
           <button

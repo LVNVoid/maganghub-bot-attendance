@@ -200,7 +200,7 @@ export function MaganghubCredentialCard({
             </div>
           </div>
 
-          <div className="text-[11px] text-ink-muted">
+          <div className="text-[11px] text-ink-muted" suppressHydrationWarning>
             {lastCheckedAt
               ? `Terakhir dicek: ${new Date(lastCheckedAt).toLocaleString("id-ID")}`
               : "Belum pernah dicek"}
@@ -247,7 +247,7 @@ export function MaganghubCredentialCard({
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <span className="text-[11px] text-ink-muted">
+            <span className="text-[11px] text-ink-muted" suppressHydrationWarning>
               {lastCheckedAt
                 ? `Terakhir dicek: ${new Date(lastCheckedAt).toLocaleString("id-ID")}`
                 : "Belum pernah dicek"}
