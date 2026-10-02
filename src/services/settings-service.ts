@@ -114,6 +114,7 @@ export async function getUserGithubAccount(userId: string) {
       userId,
       provider: { in: ["github", "github_pat"] },
     },
+    orderBy: { provider: "desc" },
     select: {
       id: true,
       provider: true,

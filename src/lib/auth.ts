@@ -64,10 +64,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role || "USER";
+      }
+      if (account && account.provider === "github" && account.access_token && token.id) {
+        try {
+          await db.account.updateMany({
+            where: {
+              userId: token.id as string,
+              provider: "github",
+            },
+            data: {
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              scope: account.scope,
+              token_type: account.token_type,
+            },
+          });
+        } catch (err) {
+          console.error("Failed to refresh GitHub access token in DB:", err);
+        }
       }
       return token;
     },
